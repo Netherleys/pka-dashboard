@@ -1,0 +1,3112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PKA Dashboard</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4B6E53">
+  <!-- No-op favicon: with no <link rel="icon"> declared, Chrome's implicit
+       favicon auto-discovery on file:// origins can misresolve to the
+       page's own URL and attempt to (re)load it as a sub-resource, which
+       file:// security rules then reject — surfacing as "Unsafe attempt to
+       load URL X from frame with URL X". Declaring an explicit icon here
+       (even an empty one) short-circuits that auto-discovery. -->
+  <link rel="icon" href="data:,">
+  <style>
+
+    /* =============================================
+       RESET & BASE
+    ============================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      /* Muted green colour palette */
+      --ink-rgb:           32, 41, 32;      /* base for tinted borders/shadows */
+      --accent-rgb:        75, 110, 83;     /* base for tinted accent fills   */
+
+      --bg-page:           #F3F5F0;
+      --bg-card:           #E9EEE4;
+      --bg-card-hover:     #DFE7D8;
+      --border-subtle:     rgba(var(--ink-rgb), 0.1);
+      --border-card:       rgba(var(--accent-rgb), 0.2);
+      --border-card-hover: rgba(var(--accent-rgb), 0.45);
+      --text-primary:      #202920;
+      --text-secondary:    #4B5C46;
+      --text-muted:        #7C8A73;
+      --accent:            #4B6E53;
+      --accent-alt:        #6B7F3F;         /* secondary status tone, same green family */
+      --accent-dim:        rgba(var(--accent-rgb), 0.08);
+      --divider:           rgba(var(--ink-rgb), 0.1);
+      --danger:            #A34430;
+      --danger-rgb:        163, 68, 48;
+
+      /* Payable accent — warm amber/rust, distinct from both --danger
+         (red-brick, "something's wrong") and --panel-bg (autumn yellow,
+         already the row background). Reserved for money-owed rows only. */
+      --payable:           #B8722E;
+      --payable-rgb:       184, 114, 46;
+      --payable-text:      #7A4A1B;
+
+      /* Muted autumn yellow — expanded-panel tone, distinct from the
+         green header cards but still within the same warm/earthy family */
+      --panel-bg:          #EDE0B7;
+      --panel-divider-rgb: 122, 96, 40;
+
+      /* Avatar colours — muted green family, varied by depth/warmth */
+      --av-thomas:         #3F5D42;
+      --av-fred:           #5C7A52;
+      --av-anderson:       #4A6B5E;
+      --av-mia:            #5B8A62;
+      --av-jack:           #3E6E4E;
+      --av-marcus:         #46706B;
+      --av-cara:           #6B7F4A;
+      --av-evelyn:         #527056;
+      --av-sadie:          #7A8F4E;
+      --av-eleanor:        #35594A;
+
+      /* Typography */
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+      /* Used only for the open Bookmark panel text — prioritises legibility
+         (see 2026-07-11 brief) over the general-purpose --font-sans stack. */
+      --font-legible: system-ui, "Segoe UI", Calibri, Verdana, sans-serif;
+
+      /* Geometry */
+      --radius-card:  12px;
+      --shadow-card:  0 2px 12px rgba(var(--ink-rgb), 0.1);
+      --shadow-hover: 0 6px 28px rgba(var(--ink-rgb), 0.18);
+
+      /* Bookmark category colour identity — one hue per live category,
+         carried over from Mia's 2026-07-08 nav wireframes (same 8 categories
+         as SEED_VISIBLE below) so the "open panel" tint in Bookmarks has a
+         real per-category identity instead of a generic grey. */
+      --cat-publishing: #6B8CAE;
+      --cat-finance:    #4F9B72;
+      --cat-comms:      #C9834A;
+      --cat-web:        #7C6FAE;
+      --cat-creative:   #D4667A;
+      --cat-writing:    #B8A23E;
+      --cat-ai:         #4AA8A0;
+      --cat-personal:   #9A958A;
+
+      /* Sticky anchor-nav bar height — used for scroll-margin-top on each
+         jump-linked section so anchored jumps clear the sticky bar. */
+      --nav-height: 54px;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+
+    /* =============================================
+       ANCHOR NAV — sticky jump-link bar (pattern: Anchor-Nav,
+       per Mia's 2026-07-08 nav wireframes). Every section stays
+       permanently in the DOM — Ctrl+F / browser find always
+       works, unlike a tabs pattern that display:none-hides panels.
+       Replaces the old top masthead banner (moved to the footer).
+    ============================================== */
+    .dash-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      align-items: center;
+      background: var(--bg-page);
+      padding: 0.65rem 3rem;
+      border-bottom: 1px solid var(--divider);
+      scrollbar-width: thin;
+    }
+
+    .dash-nav-item {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.4rem 0.95rem;
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .dash-nav-item:hover {
+      border-color: rgba(var(--accent-rgb), 0.5);
+      color: var(--accent);
+    }
+
+    /* .active is driven by scroll position (IntersectionObserver), not a
+       click-to-hide toggle — every section below is always in the DOM. */
+    .dash-nav-item.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* "Back to top" — small secondary pill next to each section title,
+       sized down from .dash-nav-item since it's a secondary affordance. */
+    .back-to-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      background: none;
+      border: 1px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      font-family: var(--font-sans);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: color 0.14s ease, border-color 0.14s ease;
+    }
+
+    .back-to-top:hover {
+      color: var(--accent);
+      border-color: rgba(var(--accent-rgb), 0.4);
+    }
+
+    #sec-bookmarks, #sec-navlinks, #sec-actions, #sec-builds, #sec-portfolio {
+      scroll-margin-top: calc(var(--nav-height) + 14px);
+    }
+
+
+    /* =============================================
+       PAGE BODY & DASHBOARD COLUMNS
+    ============================================== */
+    .page-body {
+      padding: 2rem 3rem 5rem;
+    }
+
+    /* Full-width links row: Bookmarks, My Navigation, Quick Notes side by side */
+    .links-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2.5rem;
+      align-items: start;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Two-column dashboard grid */
+    .dashboard-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    .col-left,
+    .col-right,
+    .col-links-a,
+    .col-links-b,
+    .col-links-c {
+      min-width: 0; /* prevent grid blowout */
+    }
+
+
+    /* =============================================
+       SECTION HEADER UTILITY
+    ============================================== */
+    .section-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .section-rule {
+      flex: 1;
+      height: 1px;
+      background: var(--divider);
+    }
+
+
+    /* =============================================
+       BOOKMARKS SECTION
+    ============================================== */
+    .bookmarks-section {
+      margin-bottom: 3.5rem;
+    }
+
+    /* Accordion item — shaped, green-tinted card, same treatment as .build-row */
+    .bm-accordion-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bm-accordion-item:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Accordion header row */
+    .bm-accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0.75rem 0 0;
+      background: none;
+    }
+
+    /* Category toggle button (chevron + label) */
+    .bm-cat-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      text-align: left;
+      transition: background 0.14s;
+      font-family: var(--font-sans);
+    }
+
+    .bm-cat-toggle:hover {
+      background: rgba(var(--accent-rgb), 0.06);
+    }
+
+    .bm-chevron {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+      display: inline-block;
+    }
+
+    .bm-accordion-item.open .bm-chevron {
+      transform: rotate(90deg);
+    }
+
+    .bm-category-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    /* Collapsible panel — max-height transition. Distinct tone from the
+       header card above it (page background, lighter than --bg-card) so
+       "opened contents" reads as visually separate from the header row. */
+    .bm-accordion-panel {
+      max-height: 0;
+      overflow: hidden;
+      background: var(--panel-bg);
+      transition: max-height 0.3s ease;
+    }
+
+    .bm-accordion-item.open .bm-accordion-panel {
+      max-height: 600px;
+    }
+
+    /* Open-panel colour + legibility fix (2026-07-11) — scoped to Bookmarks
+       only (#bm-visible), not My Navigation, which shares these same .bm-*
+       classes but wasn't part of this ask. Each accordion item carries its
+       own --cat custom property (set inline, per category, in the JS render)
+       so one ruleset covers every category's own colour identity, tinted
+       lighter rather than filled solid. Falls back to --accent if --cat is
+       unset for any reason. */
+    #bm-visible .bm-accordion-item.open .bm-accordion-panel {
+      background: color-mix(in srgb, var(--cat, var(--accent)) 22%, #fff 78%);
+    }
+    #bm-visible .bm-accordion-item.open .bm-panel-inner {
+      border-top-color: rgba(var(--ink-rgb), 0.12);
+    }
+    /* Font change, not just a colour change — genuinely legible stack,
+       medium weight (not bold) rather than the default body-text weight. */
+    #bm-visible .bm-accordion-item.open .bm-chip-name {
+      font-family: var(--font-legible);
+      font-weight: 500;
+      font-size: 0.95rem;
+      letter-spacing: 0.005em;
+    }
+    #bm-visible .bm-accordion-item.open .bm-chip-note {
+      font-family: var(--font-legible);
+    }
+
+    .bm-panel-inner {
+      padding: 0.2rem 1rem 0.9rem;
+      border-top: 1px solid rgba(var(--panel-divider-rgb), 0.2);
+    }
+
+    /* Link list — plain text rows, Notion-style (no chip/pill chrome) */
+    .bm-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      padding-top: 0.4rem;
+    }
+
+    /* Individual row */
+    .bm-chip {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-radius: 4px;
+      padding: 0 0.35rem;
+      transition: background 0.14s ease;
+    }
+
+    .bm-chip:hover {
+      background: rgba(var(--accent-rgb), 0.16);
+    }
+
+    .bm-chip-link {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-size: 0.92rem;
+      padding: 0.36rem 0;
+      min-width: 0;
+      flex: 1;
+      transition: color 0.14s ease;
+    }
+
+    .bm-chip:hover .bm-chip-link {
+      color: var(--accent);
+    }
+
+    .bm-chip-link:hover .bm-chip-name,
+    .bm-chip-link:focus-visible .bm-chip-name {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .bm-chip-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .bm-chip-ext {
+      font-size: 0.55rem;
+      opacity: 0.35;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    /* Optional freeform note — muted, secondary to the link name, fills
+       the row's remaining horizontal space and truncates if too long */
+    .bm-chip-note {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.8rem;
+      font-style: italic;
+      color: var(--text-muted);
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Hover controls */
+    .bm-chip-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.05rem;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      flex-shrink: 0;
+    }
+
+    .bm-chip:hover .bm-chip-controls {
+      opacity: 1;
+    }
+
+    .bm-ctrl-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.65rem;
+      padding: 0.18rem 0.22rem;
+      border-radius: 3px;
+      line-height: 1;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .bm-ctrl-edit { color: rgba(var(--accent-rgb), 0.5); }
+    .bm-ctrl-edit:hover {
+      background: rgba(var(--accent-rgb), 0.15);
+      color: var(--accent);
+    }
+
+    /* Pin/unpin — Bookmarks only (see chipHtml's showPin flag). Unpinned
+       is a faint outline star, matching the muted resting tone of the
+       edit/delete icons beside it; pinned turns solid accent so it reads
+       at a glance without needing the hover state. */
+    .bm-ctrl-pin { color: rgba(var(--accent-rgb), 0.45); }
+    .bm-ctrl-pin:hover {
+      background: rgba(var(--accent-rgb), 0.15);
+      color: var(--accent);
+    }
+    .bm-ctrl-pin.pinned { color: var(--accent); }
+
+    /* Move/copy to another category — same muted-icon treatment. */
+    .bm-ctrl-move { color: rgba(var(--accent-rgb), 0.5); }
+    .bm-ctrl-move:hover {
+      background: rgba(var(--accent-rgb), 0.15);
+      color: var(--accent);
+    }
+
+    .bm-ctrl-delete { color: rgba(var(--danger-rgb), 0.45); }
+    .bm-ctrl-delete:hover {
+      background: rgba(var(--danger-rgb), 0.12);
+      color: var(--danger);
+    }
+
+    /* Add button */
+    .bm-add-btn {
+      background: none;
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      border-radius: 4px;
+      color: rgba(var(--accent-rgb), 0.65);
+      font-size: 0.74rem;
+      font-family: var(--font-sans);
+      padding: 0.14rem 0.48rem;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+      transition: background 0.14s, border-color 0.14s, color 0.14s;
+    }
+    .bm-add-btn:hover {
+      background: rgba(var(--accent-rgb), 0.1);
+      border-color: rgba(var(--accent-rgb), 0.45);
+      color: var(--accent);
+    }
+
+    /* Empty state */
+    .bm-empty {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Toggle bar */
+    .bm-toggle-bar {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+    }
+
+    .bm-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      font-family: var(--font-sans);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.14s;
+    }
+    .bm-toggle-btn:hover { color: var(--text-secondary); }
+
+    /* Hidden area */
+    .bm-hidden-area {
+      margin-top: 1rem;
+      padding: 1rem 1.1rem;
+      background: rgba(var(--ink-rgb), 0.025);
+      border: 1px dashed rgba(var(--ink-rgb), 0.14);
+      border-radius: 8px;
+    }
+
+    .bm-hidden-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--divider);
+    }
+
+    .bm-hidden-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0.75;
+    }
+
+
+    /* =============================================
+       BOOKMARK MODAL
+    ============================================== */
+    .bm-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .bm-modal[hidden] { display: none; }
+
+    .bm-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(var(--ink-rgb), 0.45);
+      backdrop-filter: blur(3px);
+    }
+
+    .bm-modal-box {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-page);
+      border: 1px solid rgba(var(--accent-rgb), 0.3);
+      border-radius: 12px;
+      padding: 2rem;
+      width: min(460px, 100%);
+      box-shadow: 0 20px 60px rgba(var(--ink-rgb), 0.25);
+    }
+
+    .bm-modal-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    .bm-modal-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .bm-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .bm-field-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .bm-input {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(var(--ink-rgb), 0.18);
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      color: var(--text-primary);
+      font-size: 0.96rem;
+      font-family: var(--font-sans);
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .bm-input:focus {
+      border-color: rgba(var(--accent-rgb), 0.55);
+      background: #fff;
+    }
+
+    select.bm-input { cursor: pointer; }
+
+    .bm-input option {
+      background: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    .bm-modal-btns {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .bm-btn-save,
+    .bm-btn-cancel {
+      padding: 0.5rem 1.4rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 0.14s, border-color 0.14s, color 0.14s;
+    }
+
+    .bm-btn-save {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #fff;
+    }
+    .bm-btn-save:hover {
+      background: #395541;
+      border-color: #395541;
+    }
+
+    .bm-btn-cancel {
+      background: none;
+      border: 1px solid rgba(var(--ink-rgb), 0.2);
+      color: var(--text-secondary);
+    }
+    .bm-btn-cancel:hover {
+      background: rgba(var(--ink-rgb), 0.06);
+      border-color: rgba(var(--ink-rgb), 0.35);
+    }
+
+
+    /* =============================================
+       NAV LINKS SECTION (personal navigation —
+       folders / Drive / OneDrive) — shares the
+       bm- accordion & row classes above; this block
+       is just the bits unique to it.
+    ============================================== */
+    .navlinks-section {
+      margin-bottom: 3.5rem;
+    }
+
+    /* =============================================
+       QUICK NOTES — plain persistent scratchpad,
+       localStorage only (no external integration).
+       Green card chrome + ochre writing surface, same
+       pairing as the Bookmarks/Nav header-vs-panel tones.
+    ============================================== */
+    .quicknotes-section {
+      margin-bottom: 3.5rem;
+      height: 100%;
+    }
+
+    .qn-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .qn-textarea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      background: var(--panel-bg);
+      border: 1px solid rgba(var(--panel-divider-rgb), 0.22);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .qn-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .qn-textarea:focus {
+      border-color: rgba(var(--accent-rgb), 0.5);
+    }
+
+    .qn-status {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-align: right;
+      min-height: 1em;
+    }
+
+
+    /* =============================================
+       TEAM ACTIONS — manual registry (Thomas-authored,
+       see team-actions-data.js), flat dismissible list.
+       Card chrome is a deliberate clone of .qn-card so
+       this column reads as one continuous panel with
+       Quick Notes above it.
+    ============================================== */
+    .ta-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .ta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .ta-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.6rem;
+      background: var(--panel-bg);
+      border: 1px solid rgba(var(--panel-divider-rgb), 0.22);
+      border-radius: 8px;
+      padding: 0.6rem 0.7rem;
+    }
+
+    .ta-row-main {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+      min-width: 0;
+    }
+
+    .ta-row-text {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      line-height: 1.45;
+    }
+
+    .ta-row-source {
+      font-size: 0.7rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    /* Linked source tags get their own pill chrome (same tint/border
+       pattern as .card-more) so it's obvious at rest — not just on
+       hover — which source tags are clickable vs plain text. */
+    a.ta-row-source {
+      display: inline-flex;
+      align-items: center;
+      font-style: normal;
+      text-decoration: none;
+      cursor: pointer;
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.1);
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      border-radius: 4px;
+      padding: 0.04rem 0.4rem;
+    }
+    a.ta-row-source:hover {
+      background: rgba(var(--accent-rgb), 0.18);
+      border-color: rgba(var(--accent-rgb), 0.5);
+    }
+
+    .ta-dismiss {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.65rem;
+      color: rgba(var(--danger-rgb), 0.45);
+      padding: 0.2rem 0.3rem;
+      border-radius: 3px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background 0.12s, color 0.12s;
+    }
+    .ta-dismiss:hover {
+      background: rgba(var(--danger-rgb), 0.12);
+      color: var(--danger);
+    }
+
+    .ta-empty {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Payable variant — left accent stripe + amber tint distinguish a
+       money-owed row from a regular action row at a glance, without
+       reusing --danger (that reads as "something's wrong", not "you
+       owe this"). Badge/amount/due-date chrome all key off the same
+       --payable token so it reads as one consistent treatment. */
+    .ta-row--payable {
+      border-left: 3px solid var(--payable);
+      background: rgba(var(--payable-rgb), 0.16);
+    }
+
+    .ta-payable-badge {
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--payable-text);
+      background: rgba(var(--payable-rgb), 0.24);
+      border: 1px solid rgba(var(--payable-rgb), 0.45);
+      border-radius: 4px;
+      padding: 0.14em 0.5em;
+      margin-bottom: 0.15rem;
+    }
+
+    .ta-row-payable-info {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 0.5rem;
+    }
+
+    .ta-row-payable-amount {
+      font-weight: 700;
+      color: var(--payable-text);
+    }
+
+    .ta-row-payable-sep {
+      color: var(--text-muted);
+      opacity: 0.6;
+    }
+
+
+    /* =============================================
+       TEAM PORTFOLIO — CARD GRID (no accordion)
+    ============================================== */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .team-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .team-card:hover {
+      border-color: rgba(var(--accent-rgb), 0.4);
+      box-shadow: var(--shadow-hover);
+    }
+
+    /* — Card header (non-interactive, plain div) — */
+    .card-accordion-header {
+      display: flex;
+      align-items: center;
+      padding: 0.9rem 1.25rem;
+      gap: 1rem;
+    }
+
+    /* — Identity row — */
+    .card-identity {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      flex: 1;
+    }
+
+    /* — Avatar wrap — */
+    .card-avatar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .card-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(255, 255, 255, 0.92);
+      border: 3px solid rgba(255, 255, 255, 0.28);
+      text-transform: uppercase;
+      background-size: cover;
+      background-position: center top;
+      background-repeat: no-repeat;
+    }
+
+    /* Hide initials when a photo is loaded */
+    .card-avatar.has-photo {
+      font-size: 0;
+      color: transparent;
+    }
+
+    /* — Name / role text — */
+    .card-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+
+    .card-role {
+      font-size: 0.67rem;
+      color: var(--accent);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      margin-top: 0.22rem;
+      line-height: 1.35;
+    }
+
+    /* — Panel — always visible, no collapse — */
+    .card-panel {
+      overflow: hidden;
+    }
+
+    .card-panel-inner {
+      padding: 0.85rem 1.25rem 1.1rem;
+      border-top: 1px solid rgba(var(--accent-rgb), 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    /* — Persona quote — */
+    .card-persona {
+      font-size: 0.78rem;
+      font-style: italic;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      padding: 0.5rem 0.75rem;
+      border-left: 2px solid rgba(var(--accent-rgb), 0.4);
+      background: rgba(var(--accent-rgb), 0.06);
+      border-radius: 0 5px 5px 0;
+    }
+
+    /* — Skills list — */
+    .card-skills {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.28rem;
+    }
+
+    .card-skills li {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      line-height: 1.45;
+    }
+
+    .card-skills li::before {
+      content: '▸';
+      color: var(--accent);
+      font-size: 0.6rem;
+      flex-shrink: 0;
+      opacity: 0.7;
+      position: relative;
+      top: -0.05em;
+    }
+
+    .card-skills code {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      background: rgba(var(--accent-rgb), 0.12);
+      color: #33513a;
+      padding: 0.05em 0.3em;
+      border-radius: 3px;
+    }
+
+    /* — Read More / Full Brief link — modest, consistent with card chrome — */
+    .card-more {
+      align-self: flex-start;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-decoration: none;
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      border-radius: 5px;
+      padding: 0.3rem 0.7rem;
+      transition: background 0.14s, border-color 0.14s;
+    }
+    .card-more:hover {
+      background: rgba(var(--accent-rgb), 0.1);
+      border-color: rgba(var(--accent-rgb), 0.5);
+    }
+
+
+    /* =============================================
+       FOOTER
+    ============================================== */
+    .page-footer {
+      border-top: 1px solid rgba(var(--ink-rgb), 0.12);
+      padding: 1.5rem 2rem 1.75rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    /* Former top-of-page masthead banner text, moved here per the
+       2026-07-11 brief (dropped from the top — "obvious, eats real
+       estate" — but kept, not deleted). */
+    .footer-brand {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .footer-sub {
+      margin-top: 0.2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .footer-copy {
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+
+    /* =============================================
+       PROJECT BUILDS
+    ============================================== */
+    .builds-section {
+      margin-bottom: 2rem;
+    }
+
+    .builds-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .build-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.85rem 1.25rem;
+    }
+
+    .build-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .build-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+
+    .build-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    /* Optional per-build Obsidian log link (2026-07-11) — only rendered
+       when PROJECT_BUILDS has an obsidianLog entry for that build; omitted
+       entirely, not guessed, when no corresponding file exists. */
+    .build-obsidian-link {
+      align-self: flex-start;
+      margin-top: 0.3rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      border-radius: 5px;
+      padding: 0.15rem 0.55rem;
+      white-space: nowrap;
+      transition: background 0.14s ease, border-color 0.14s ease;
+    }
+    .build-obsidian-link:hover {
+      background: rgba(var(--accent-rgb), 0.1);
+      border-color: rgba(var(--accent-rgb), 0.5);
+    }
+
+    .build-badge {
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.25em 0.65em;
+      border-radius: 4px;
+    }
+
+    .build-badge--inbuild {
+      background: rgba(var(--accent-rgb), 0.12);
+      color: #3F5D42;
+      border: 1px solid rgba(var(--accent-rgb), 0.25);
+    }
+
+    .build-badge--active {
+      background: rgba(107, 127, 63, 0.14);
+      color: #55651F;
+      border: 1px solid rgba(107, 127, 63, 0.3);
+    }
+
+
+    /* =============================================
+       QUICK LINKS — ~1" square tiles between Bookmarks
+       and Actions For Me. Supersedes the earlier
+       "completed Project Build links" concept (2026-07-09
+       David's note) — broader now (see 2026-07-11 brief).
+    ============================================== */
+    .quicklinks-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .quicklinks-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .ql-tile {
+      width: 96px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.7rem 0.5rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease;
+    }
+
+    .ql-tile:hover {
+      border-color: rgba(var(--accent-rgb), 0.45);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .ql-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.92);
+      flex-shrink: 0;
+    }
+
+    .ql-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    /* Shared container for the Owner's Inbox / Team Inbox pair — David
+       asked for a visual grouping since they're a related pair. Dashed
+       accent border + tinted background reads as "one grouped unit"
+       without introducing new card chrome. */
+    .ql-pair {
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.5rem;
+      border: 1px dashed rgba(var(--accent-rgb), 0.35);
+      border-radius: calc(var(--radius-card) + 4px);
+      background: var(--accent-dim);
+    }
+    .ql-pair .ql-tile {
+      background: var(--bg-page);
+      box-shadow: none;
+    }
+
+
+    /* =============================================
+       RESPONSIVE
+    ============================================== */
+    @media (max-width: 1000px) {
+      .page-body {
+        padding: 1.75rem 1.5rem 4rem;
+      }
+      .dash-nav {
+        padding: 0.6rem 1.5rem;
+      }
+      .dashboard-columns {
+        grid-template-columns: 1fr;
+      }
+      .links-row {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+      .team-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page-body {
+        padding: 1.5rem 1rem 4rem;
+      }
+      .card-avatar {
+        width: 64px;
+        height: 64px;
+      }
+      .dash-nav {
+        padding: 0.55rem 1rem;
+      }
+      .quicklinks-row {
+        gap: 0.75rem;
+      }
+      .ql-tile {
+        width: 76px;
+        padding: 0.55rem 0.35rem;
+      }
+      .ql-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 0.62rem;
+      }
+      .ql-label {
+        font-size: 0.64rem;
+      }
+    }
+
+  </style>
+</head>
+<body id="page-top">
+
+  <!-- =============================================
+       ANCHOR NAV — sticky jump-link bar (pattern: Anchor-Nav).
+       Every section below stays permanently in the DOM.
+  ============================================== -->
+  <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
+    <a class="dash-nav-item" href="#sec-bookmarks">Bookmarks</a>
+    <a class="dash-nav-item" href="#sec-navlinks">My Navigation</a>
+    <a class="dash-nav-item" href="#sec-actions">Actions For Me</a>
+    <a class="dash-nav-item" href="#sec-builds">Current Builds</a>
+    <a class="dash-nav-item" href="#sec-portfolio">Portfolio</a>
+  </nav>
+
+
+  <!-- =============================================
+       PAGE BODY
+  ============================================== -->
+  <main class="page-body">
+
+    <!-- ========================================
+         FULL-WIDTH ROW: Bookmarks + My Navigation + Quick Notes, side by side
+    ========================================= -->
+    <div class="links-row">
+
+      <!-- WEBSITE BOOKMARKS -->
+      <div class="col-links-a">
+        <section class="bookmarks-section" id="sec-bookmarks" aria-label="Bookmarks">
+
+          <div class="section-header">
+            <span class="section-label">Bookmarks</span>
+            <div class="section-rule"></div>
+            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+          </div>
+
+          <!-- Accordion rendered by JS -->
+          <div id="bm-visible" class="bm-visible-area"></div>
+
+          <!-- Behind-the-scenes toggle -->
+          <div class="bm-toggle-bar">
+            <button class="bm-toggle-btn" id="bm-toggle" aria-expanded="false">
+              &#9662; Behind the scenes
+            </button>
+          </div>
+
+          <!-- Hidden bookmarks: rendered by JS -->
+          <div id="bm-hidden" class="bm-hidden-area" hidden aria-hidden="true"></div>
+
+        </section>
+      </div><!-- /col-links-a -->
+
+      <!-- MY NAVIGATION (personal folders / Drive / OneDrive links) -->
+      <div class="col-links-b">
+        <section class="navlinks-section" id="sec-navlinks" aria-label="My Navigation">
+
+          <div class="section-header">
+            <span class="section-label">My Navigation</span>
+            <div class="section-rule"></div>
+            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+          </div>
+
+          <!-- Accordion rendered by JS -->
+          <div id="nl-visible" class="bm-visible-area"></div>
+
+        </section>
+      </div><!-- /col-links-b -->
+
+      <!-- QUICK NOTES (plain persistent scratchpad, localStorage only —
+           no external integration/credentials, unlike a live Todoist feed) -->
+      <div class="col-links-c">
+        <section class="quicknotes-section" aria-label="Quick Notes">
+
+          <div class="section-header">
+            <span class="section-label">Quick Notes</span>
+            <div class="section-rule"></div>
+          </div>
+
+          <div class="qn-card">
+            <textarea id="qn-textarea" class="qn-textarea" placeholder="Jot anything down — saved automatically."></textarea>
+            <div class="qn-status" id="qn-status">&nbsp;</div>
+          </div>
+
+        </section>
+
+        <!-- TEAM ACTIONS ("Actions for me") — manual registry, entries
+             authored by Thomas directly in team-actions-data.js. No
+             urgency-grouping chrome, flat list, muted source tag per row. -->
+        <section class="team-actions-section" id="sec-actions" aria-label="Actions for me">
+
+          <div class="section-header">
+            <span class="section-label">Actions For Me</span>
+            <div class="section-rule"></div>
+            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+          </div>
+
+          <div class="ta-card">
+            <div id="ta-list" class="ta-list"></div>
+          </div>
+
+        </section>
+      </div><!-- /col-links-c -->
+
+    </div><!-- /links-row -->
+
+
+    <!-- ========================================
+         QUICK LINKS — 1" square tiles between Bookmarks and
+         Actions For Me. Supersedes the earlier "completed Project
+         Build links" idea (2026-07-09 David's note) — broader now.
+    ========================================= -->
+    <section class="quicklinks-section" aria-label="Quick Links">
+
+      <div class="section-header">
+        <span class="section-label">Quick Links</span>
+        <div class="section-rule"></div>
+      </div>
+
+      <div class="quicklinks-row">
+        <!-- Master Sales Tracker tile stripped for public mirror -- real Sheet ID, Finance data -->
+        <a class="ql-tile" href="https://netherleys.github.io/book-production-hub/" target="_blank" rel="noopener noreferrer" title="Book Production Hub">
+          <span class="ql-badge" style="background:var(--av-mia)">BH</span>
+          <span class="ql-label">Book Production Hub</span>
+        </a>
+        <a class="ql-tile" href="../Image%20Resize/index.html" target="_blank" rel="noopener noreferrer" title="Image Resize Tool">
+          <span class="ql-badge" style="background:var(--av-marcus)">IR</span>
+          <span class="ql-label">Image Resize Tool</span>
+        </a>
+        <!-- Owner's Inbox + Team Inbox — grouped per David's steer, they're a related pair -->
+        <!-- Owner's Inbox / Team Inbox tiles stripped for public mirror -- winexplorer:// local paths + Windows username, also non-functional off this PC -->
+      </div>
+    </section>
+
+
+    <div class="dashboard-columns">
+
+      <!-- ========================================
+           LEFT COLUMN: Project Builds
+      ========================================= -->
+      <div class="col-left">
+
+        <!-- PROJECT BUILDS -->
+        <section class="builds-section" id="sec-builds" aria-label="Current Project Builds">
+
+          <div class="section-header">
+            <span class="section-label">Current Builds</span>
+            <div class="section-rule"></div>
+            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+          </div>
+
+          <div class="builds-list" id="builds-list"></div>
+
+        </section>
+
+      </div><!-- /col-left -->
+
+
+      <!-- ========================================
+           RIGHT COLUMN: Team Portfolio
+      ========================================= -->
+      <div class="col-right">
+
+        <section class="team-section" id="sec-portfolio" aria-label="Team Portfolio">
+
+          <div class="section-header">
+            <span class="section-label">Team Portfolio</span>
+            <div class="section-rule"></div>
+            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+            <button class="bm-toggle-btn" id="team-toggle" aria-expanded="false">
+              &#9662; Show team
+            </button>
+          </div>
+
+          <div id="team-grid-wrap" hidden aria-hidden="true">
+            <div class="team-grid" id="team-grid"></div>
+          </div><!-- /team-grid-wrap -->
+        </section>
+
+      </div><!-- /col-right -->
+
+    </div><!-- /dashboard-columns -->
+  </main><!-- /page-body -->
+
+
+  <!-- =============================================
+       FOOTER — carries the former top masthead banner
+       text (dropped from the top, kept here per brief)
+  ============================================== -->
+  <footer class="page-footer">
+    <p class="footer-brand">PKA Dashboard</p>
+    <p class="footer-sub">Command Centre &mdash; Internal Operations</p>
+    <p class="footer-copy">PKA Management &mdash; Internal Use Only</p>
+  </footer>
+
+
+  <!-- =============================================
+       BOOKMARK MODAL
+  ============================================== -->
+  <div id="bm-modal" class="bm-modal" role="dialog" aria-modal="true"
+       aria-labelledby="bm-modal-title" hidden>
+    <div class="bm-modal-backdrop" id="bm-backdrop"></div>
+    <div class="bm-modal-box">
+      <h2 class="bm-modal-title" id="bm-modal-title">Add Bookmark</h2>
+      <div class="bm-modal-fields">
+        <label class="bm-field">
+          <span class="bm-field-label">Name</span>
+          <input type="text" id="bm-f-name" class="bm-input" placeholder="Display name" autocomplete="off">
+        </label>
+        <label class="bm-field">
+          <span class="bm-field-label">URL</span>
+          <input type="url" id="bm-f-url" class="bm-input" placeholder="https://..." autocomplete="off">
+        </label>
+        <label class="bm-field" id="bm-cat-field">
+          <span class="bm-field-label">Category</span>
+          <select id="bm-f-cat" class="bm-input"></select>
+        </label>
+        <label class="bm-field">
+          <span class="bm-field-label">Note <em>(optional)</em></span>
+          <input type="text" id="bm-f-note" class="bm-input" placeholder="e.g. old login, use the backup one" autocomplete="off">
+        </label>
+        <label class="bm-field">
+          <span class="bm-field-label">Section</span>
+          <select id="bm-f-section" class="bm-input">
+            <option value="visible">Visible</option>
+            <option value="hidden">Behind the scenes</option>
+          </select>
+        </label>
+      </div>
+      <div class="bm-modal-btns">
+        <button class="bm-btn-save" id="bm-save">Save</button>
+        <button class="bm-btn-cancel" id="bm-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       MOVE / COPY BOOKMARK MODAL (2026-07-12) — lets a bookmark
+       move to (or duplicate into) a different category, including
+       the "For Filing" staging bucket, without a full edit form.
+  ============================================== -->
+  <div id="bm-move-modal" class="bm-modal" role="dialog" aria-modal="true"
+       aria-labelledby="bm-move-modal-title" hidden>
+    <div class="bm-modal-backdrop" id="bm-move-backdrop"></div>
+    <div class="bm-modal-box">
+      <h2 class="bm-modal-title" id="bm-move-modal-title">Move / Copy Bookmark</h2>
+      <div class="bm-modal-fields">
+        <label class="bm-field">
+          <span class="bm-field-label">Target category</span>
+          <select id="bm-move-cat" class="bm-input"></select>
+        </label>
+      </div>
+      <div class="bm-modal-btns">
+        <button class="bm-btn-cancel" id="bm-move-cancel">Cancel</button>
+        <button class="bm-btn-save" id="bm-move-copy-btn">Copy</button>
+        <button class="bm-btn-save" id="bm-move-move-btn">Move</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       NAV LINK MODAL (personal folders / Drive / OneDrive)
+  ============================================== -->
+  <div id="nl-modal" class="bm-modal" role="dialog" aria-modal="true"
+       aria-labelledby="nl-modal-title" hidden>
+    <div class="bm-modal-backdrop" id="nl-backdrop"></div>
+    <div class="bm-modal-box">
+      <h2 class="bm-modal-title" id="nl-modal-title">Add Nav Link</h2>
+      <div class="bm-modal-fields">
+        <label class="bm-field">
+          <span class="bm-field-label">Name</span>
+          <input type="text" id="nl-f-name" class="bm-input" placeholder="Display name" autocomplete="off">
+        </label>
+        <label class="bm-field">
+          <span class="bm-field-label">URL</span>
+          <input type="text" id="nl-f-url" class="bm-input" placeholder="file:///C:/... or a Drive/OneDrive folder link" autocomplete="off">
+        </label>
+        <label class="bm-field" id="nl-cat-field">
+          <span class="bm-field-label">Category</span>
+          <select id="nl-f-cat" class="bm-input"></select>
+        </label>
+        <label class="bm-field">
+          <span class="bm-field-label">Note <em>(optional)</em></span>
+          <input type="text" id="nl-f-note" class="bm-input" placeholder="e.g. check before Friday" autocomplete="off">
+        </label>
+      </div>
+      <div class="bm-modal-btns">
+        <button class="bm-btn-save" id="nl-save">Save</button>
+        <button class="bm-btn-cancel" id="nl-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =============================================
+       TEAM ACTIONS DATA — loaded as a plain script tag (not
+       fetch()) so it works identically under file:// and
+       Marcus's chrome-extension:// bundled New Tab copy.
+       Sets the global TEAM_ACTIONS_DATA array, read below.
+  ============================================== -->
+  <!-- team-actions-data.js intentionally NOT included in this public mirror -- no sync channel exists yet for its content (only for dismissed-ids), and it contains real internal items (e.g. a live payable invoice amount). Team Actions section on this mirror will show "Nothing outstanding right now" -- known, deliberate limitation, not a bug. See SETUP.md. -->
+
+
+  <!-- =============================================
+       SCRIPTS
+  ============================================== -->
+  <script>
+
+  /* ================================================
+     PKA SYNC — cross-device backend for Bookmarks and the
+     Team Actions/Payables "dismissed" state (2026-07-13,
+     Marcus Webb). Backed by the "PKA Sync" Google Sheet via
+     an Apps Script Web App — no OAuth in the browser, plain
+     fetch() to a public (anonymous-access) URL. localStorage
+     stays the source of truth for instant, offline-safe reads;
+     this is a best-effort background sync layer on top of it,
+     not a replacement for it. If a call fails (offline, Google
+     hiccup, etc.) it fails silently to console — the dashboard
+     must keep working exactly as it always has on localStorage
+     alone; sync is a bonus, never a hard dependency.
+
+     Contract with the Web App (see PKA-Infra\google-sheets-tool\
+     pka_sync_webapp\Code.gs):
+       GET  ?key=<key>            -> { value, updatedBy, updatedAt }
+       POST { key, value, updatedBy } -> { ok, updatedAt }
+     value is always the FULL current value (whole-value
+     replace), matching how both pka_bookmarks and
+     pka_team_actions_dismissed are already stored as single
+     localStorage values.
+  ================================================ */
+  var PkaSync = (function () {
+    'use strict';
+
+    var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyflhTzcdC34aLpDXxgNCmz_Dn0CgKZuDarKgfkqIjq2Mgf_Oe946x-DaNEeRBcChDd/exec';
+    var DEVICE_LABEL = (function () {
+      /* Best-effort, non-identifying device label for the
+         updatedBy field — purely diagnostic (helps whoever's
+         looking at the Sheet directly see which device wrote
+         last), never used for any access-control decision. */
+      try {
+        return navigator.platform + ' / ' + (navigator.userAgentData ? navigator.userAgentData.platform : navigator.userAgent.slice(0, 40));
+      } catch (e) { return 'unknown-device'; }
+    })();
+
+    function pull(key) {
+      return fetch(WEB_APP_URL + '?key=' + encodeURIComponent(key), { method: 'GET' })
+        .then(function (resp) { return resp.json(); })
+        .catch(function (err) {
+          console.warn('PkaSync.pull failed for', key, '- continuing on localStorage only.', err);
+          return null; /* caller treats null as "sync unavailable, don't touch local state" */
+        });
+    }
+
+    function push(key, value) {
+      return fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, /* avoids a CORS preflight (see note below) */
+        body: JSON.stringify({ key: key, value: value, updatedBy: DEVICE_LABEL })
+      })
+        .then(function (resp) { return resp.json(); })
+        .catch(function (err) {
+          console.warn('PkaSync.push failed for', key, '- local save still succeeded, will retry next save.', err);
+          return null;
+        });
+      /* Content-Type is deliberately 'text/plain', not
+         'application/json': a JSON content-type on a
+         cross-origin POST triggers a CORS preflight (OPTIONS),
+         which Apps Script Web Apps do not handle - the actual
+         POST would be blocked before it ever reached doPost().
+         'text/plain' keeps this a "simple request" (no
+         preflight); Code.gs still parses the body as JSON
+         regardless of the header, so this is safe. */
+    }
+
+    return { pull: pull, push: push };
+  })();
+
+  /* ================================================
+     BOOKMARK MANAGEMENT
+  ================================================ */
+  (function () {
+    'use strict';
+
+    var LS_KEY = 'pka_bookmarks';
+    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
+
+    function genId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    /* ---- Seed data ---- */
+    var SEED_VISIBLE = [];  /* stripped for public mirror -- real data loads live via PkaSync */
+
+    var SEED_HIDDEN = [];  /* stripped for public mirror -- real data loads live via PkaSync */
+
+    /* ---- Storage ---- */
+    function getBookmarks() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+
+    function saveBookmarks(data) {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) {}
+      /* Best-effort cross-device push (2026-07-13). Fire-and-forget —
+         localStorage above is already the source of truth for this
+         device/session; sync failure here must never block or throw. */
+      PkaSync.push(LS_KEY, data);
+    }
+
+    function freshBookmarks() {
+      return {
+        version: SCHEMA_VERSION,
+        visible: SEED_VISIBLE.map(function (b) {
+          return { id: genId(), name: b.name, url: b.url, category: b.category };
+        }),
+        hidden: SEED_HIDDEN.map(function (b) {
+          return { id: genId(), name: b.name, url: b.url };
+        })
+      };
+    }
+
+    /* Defensive shape check — catches stale/incompatible data saved by an
+       older code version so it can never silently break rendering. */
+    function isValidBookmarkShape(data) {
+      return !!data
+        && Array.isArray(data.visible)
+        && Array.isArray(data.hidden)
+        && data.visible.every(function (b) {
+          return b && typeof b.id === 'string' && typeof b.name === 'string'
+            && typeof b.url === 'string' && typeof b.category === 'string';
+        })
+        && data.hidden.every(function (b) {
+          return b && typeof b.id === 'string' && typeof b.name === 'string' && typeof b.url === 'string';
+        });
+    }
+
+    function initBookmarks() {
+      if (!localStorage.getItem(LS_KEY)) {
+        var fresh = freshBookmarks();
+        saveBookmarks(fresh);
+        return fresh;
+      }
+
+      var data = getBookmarks();
+
+      if (!isValidBookmarkShape(data)) {
+        /* Unrecognised/corrupt shape (e.g. from an incompatible earlier or
+           later code version) — fall back to fresh seed data for THIS key
+           only, rather than crashing or rendering blank. */
+        var reset = freshBookmarks();
+        saveBookmarks(reset);
+        return reset;
+      }
+
+      if (data.version !== SCHEMA_VERSION) {
+        /* Shape is valid but unstamped (pre-dates this version guard) —
+           no structural migration needed yet, just stamp and continue. */
+        data.version = SCHEMA_VERSION;
+        saveBookmarks(data);
+      }
+
+      return data;
+    }
+
+    /* ---- State ---- */
+    var state      = initBookmarks();
+    var openCat    = 'Publishing';   /* which accordion category is open */
+    var hiddenOpen = false;
+    var modalState = { mode: 'add', id: null };
+
+    /* ---- Helpers ---- */
+    var STAGING_CATEGORY = 'For Filing';
+
+    /* "For Filing" (2026-07-12) is a standing default bucket — always
+       present in the category list (and the Add/Move modals' category
+       pickers) even when nothing is in it yet, unlike every other
+       category here which only exists because a bookmark uses it. Lets a
+       bookmark land somewhere without being sorted into a real category
+       immediately; move it out later via the Move/Copy control on the row. */
+    function getCategories() {
+      var seen = [];
+      state.visible.forEach(function (b) {
+        if (seen.indexOf(b.category) === -1) seen.push(b.category);
+      });
+      if (seen.indexOf(STAGING_CATEGORY) === -1) seen.push(STAGING_CATEGORY);
+      return seen;
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* Category colour identity (2026-07-11) — maps each live category to
+       its --cat-* custom property (defined in :root). Falls back to
+       --accent for any category with no mapped colour (e.g. a brand-new
+       category David adds himself via the modal) rather than breaking. */
+    var CATEGORY_COLOR_VAR = {
+      'Publishing':     '--cat-publishing',
+      'Finance':        '--cat-finance',
+      'Communications': '--cat-comms',
+      'Web & Hosting':  '--cat-web',
+      'Creative':       '--cat-creative',
+      'Writing Tools':  '--cat-writing',
+      'PKA & AI':       '--cat-ai',
+      'Personal':       '--cat-personal'
+    };
+    function catColorVar(cat) {
+      return CATEGORY_COLOR_VAR[cat] || '--accent';
+    }
+
+    /* categorized: only Bookmarks' own visible rows (real categories +
+       Pinned + For Filing) get the pin and move/copy controls —
+       "Behind the scenes" (hidden) bookmarks have no category, so neither
+       pinning nor moving-between-categories applies to them. */
+    function chipHtml(b, categorized) {
+      var pinBtn = categorized
+        ? '<button class="bm-ctrl-btn bm-ctrl-pin' + (b.pinned ? ' pinned' : '') + '" data-id="' + esc(b.id) + '" title="' + (b.pinned ? 'Unpin from Pinned view' : 'Pin to Pinned view') + '">' + (b.pinned ? '&#9733;' : '&#9734;') + '</button>'
+        : '';
+      var moveBtn = categorized
+        ? '<button class="bm-ctrl-btn bm-ctrl-move" data-id="' + esc(b.id) + '" title="Move or copy to another category">&#8646;</button>'
+        : '';
+      return '<div class="bm-chip" data-id="' + esc(b.id) + '">'
+        + '<a href="' + esc(b.url) + '" target="_blank" rel="noopener noreferrer" class="bm-chip-link" title="' + esc(b.name) + '">'
+        + '<span class="bm-chip-name">' + esc(b.name) + '</span>'
+        + '<span class="bm-chip-ext" aria-hidden="true">&#8599;</span>'
+        + (b.note ? '<span class="bm-chip-note">' + esc(b.note) + '</span>' : '')
+        + '</a>'
+        + '<span class="bm-chip-controls">'
+        + pinBtn
+        + moveBtn
+        + '<button class="bm-ctrl-btn bm-ctrl-edit" data-id="' + esc(b.id) + '" title="Edit bookmark">&#9998;</button>'
+        + '<button class="bm-ctrl-btn bm-ctrl-delete" data-id="' + esc(b.id) + '" title="Delete bookmark">&#10005;</button>'
+        + '</span>'
+        + '</div>';
+    }
+
+    /* ---- Render visible (accordion) ---- */
+    function renderVisible() {
+      var container = document.getElementById('bm-visible');
+      var cats = getCategories();
+
+      /* "Pinned" is a virtual category — not stored on any bookmark's own
+         .category, just aggregated here from every bookmark (in any real
+         category) with pinned:true. Only shown when at least one bookmark
+         is pinned, so it never renders as a stray empty group. */
+      var pinnedItems = state.visible.filter(function (b) { return b.pinned; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var allCats = pinnedItems.length ? ['Pinned'].concat(cats) : cats;
+
+      /* If stored openCat no longer exists, fall back to first */
+      if (allCats.indexOf(openCat) === -1) openCat = allCats[0] || null;
+
+      var html = allCats.map(function (cat) {
+        var isOpen   = cat === openCat;
+        var isPinned = cat === 'Pinned';
+        var items    = isPinned
+          ? pinnedItems
+          : state.visible.filter(function (b) { return b.category === cat; })
+              .sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var panelId  = 'bmp-' + cat.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        var colorVar = isPinned ? '--accent' : catColorVar(cat);
+        var label    = isPinned ? '&#9733; Pinned' : esc(cat);
+        /* Pinned is an aggregated view, not a real category — no "Add"
+           button (there's nowhere for a brand-new bookmark to be "added
+           pinned" into; pin an existing one from its real category instead). */
+        var addBtn   = isPinned ? '' : '<button class="bm-add-btn" data-add-cat="' + esc(cat) + '">&#65291; Add</button>';
+
+        var chips = items.map(function (b) { return chipHtml(b, true); }).join('');
+
+        return '<div class="bm-accordion-item' + (isOpen ? ' open' : '') + '" data-cat="' + esc(cat) + '" style="--cat:var(' + colorVar + ')">'
+          + '<div class="bm-accordion-header">'
+          + '<button class="bm-cat-toggle" data-category="' + esc(cat) + '" aria-expanded="' + isOpen + '" aria-controls="' + panelId + '">'
+          + '<span class="bm-chevron" aria-hidden="true">&#9656;</span>'
+          + '<span class="bm-category-label">' + label + '</span>'
+          + '</button>'
+          + addBtn
+          + '</div>'
+          + '<div class="bm-accordion-panel" id="' + panelId + '" role="region" aria-label="' + esc(cat) + ' bookmarks">'
+          + '<div class="bm-panel-inner">'
+          + '<div class="bm-chips">' + (chips || '<span class="bm-empty">No bookmarks yet.</span>') + '</div>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+
+      container.innerHTML = html;
+      bindVisibleEvents();
+    }
+
+    /* ---- Render hidden bookmarks ---- */
+    function renderHidden() {
+      var container = document.getElementById('bm-hidden');
+      var items = state.hidden.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+      var chips = items.map(function (b) { return chipHtml(b, false); }).join('');
+
+      container.innerHTML =
+        '<div class="bm-hidden-header">'
+        + '<span class="bm-hidden-label">Behind the scenes</span>'
+        + '<button class="bm-add-btn" id="bm-add-hidden">&#65291; Add</button>'
+        + '</div>'
+        + '<div class="bm-chips">' + (chips || '<span class="bm-empty">No items yet.</span>') + '</div>';
+
+      bindHiddenEvents();
+    }
+
+    /* ---- Event binding ---- */
+    function bindVisibleEvents() {
+      /* Accordion toggles */
+      document.querySelectorAll('.bm-cat-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var cat    = btn.dataset.category;
+          var item   = btn.closest('.bm-accordion-item');
+          var isOpen = item.classList.contains('open');
+
+          /* Close all */
+          document.querySelectorAll('#bm-visible .bm-accordion-item').forEach(function (el) {
+            el.classList.remove('open');
+            el.querySelector('.bm-cat-toggle').setAttribute('aria-expanded', 'false');
+          });
+
+          /* Open this one if it was closed */
+          if (!isOpen) {
+            item.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            openCat = cat;
+          } else {
+            openCat = null;
+          }
+        });
+      });
+
+      /* Edit */
+      document.querySelectorAll('#bm-visible .bm-ctrl-edit').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          openModal('edit', btn.dataset.id);
+        });
+      });
+
+      /* Delete */
+      document.querySelectorAll('#bm-visible .bm-ctrl-delete').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          deleteBookmark(btn.dataset.id);
+        });
+      });
+
+      /* Pin / unpin */
+      document.querySelectorAll('#bm-visible .bm-ctrl-pin').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          togglePin(btn.dataset.id);
+        });
+      });
+
+      /* Move / copy to another category */
+      document.querySelectorAll('#bm-visible .bm-ctrl-move').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          openMoveModal(btn.dataset.id);
+        });
+      });
+
+      /* Add per category */
+      document.querySelectorAll('#bm-visible .bm-add-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openModal('add', null, 'visible', btn.dataset.addCat);
+        });
+      });
+    }
+
+    /* ---- Pin / unpin — toggles pinned on the underlying bookmark (which
+       still lives in its real category; Pinned is just a second, aggregated
+       view onto the same object, see renderVisible). ---- */
+    function togglePin(id) {
+      var bm = state.visible.find(function (b) { return b.id === id; });
+      if (!bm) return;
+      bm.pinned = !bm.pinned;
+      saveBookmarks(state);
+      renderVisible();
+    }
+
+    function bindHiddenEvents() {
+      document.querySelectorAll('#bm-hidden .bm-ctrl-edit').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          openModal('edit', btn.dataset.id);
+        });
+      });
+      document.querySelectorAll('#bm-hidden .bm-ctrl-delete').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          deleteBookmark(btn.dataset.id);
+        });
+      });
+      var addHidden = document.getElementById('bm-add-hidden');
+      if (addHidden) {
+        addHidden.addEventListener('click', function () {
+          openModal('add', null, 'hidden');
+        });
+      }
+    }
+
+    /* ---- Modal ---- */
+    var modal    = document.getElementById('bm-modal');
+    var fName    = document.getElementById('bm-f-name');
+    var fUrl     = document.getElementById('bm-f-url');
+    var fCat     = document.getElementById('bm-f-cat');
+    var fNote    = document.getElementById('bm-f-note');
+    var fSection = document.getElementById('bm-f-section');
+    var catField = document.getElementById('bm-cat-field');
+
+    function populateCatSelect(selected) {
+      var cats = getCategories();
+      fCat.innerHTML = cats.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === selected ? ' selected' : '') + '>' + esc(c) + '</option>';
+      }).join('') + '<option value="__new__">&#65291; New category…</option>';
+    }
+
+    function updateCatVisibility() {
+      catField.style.display = fSection.value === 'hidden' ? 'none' : '';
+    }
+
+    fSection.addEventListener('change', updateCatVisibility);
+
+    function openModal(mode, id, zone, prefillCat) {
+      fName.style.borderColor = '';
+      fUrl.style.borderColor  = '';
+      modalState = { mode: mode, id: id };
+
+      if (mode === 'edit') {
+        var inHidden = state.hidden.some(function (b) { return b.id === id; });
+        var bm = inHidden
+          ? state.hidden.find(function (b) { return b.id === id; })
+          : state.visible.find(function (b) { return b.id === id; });
+        if (!bm) return;
+        fName.value    = bm.name;
+        fUrl.value     = bm.url;
+        fNote.value    = bm.note || '';
+        fSection.value = inHidden ? 'hidden' : 'visible';
+        populateCatSelect(bm.category || '');
+        document.getElementById('bm-modal-title').textContent = 'Edit Bookmark';
+      } else {
+        fName.value    = '';
+        fUrl.value     = '';
+        fNote.value    = '';
+        fSection.value = zone || 'visible';
+        populateCatSelect(prefillCat || getCategories()[0] || '');
+        document.getElementById('bm-modal-title').textContent = 'Add Bookmark';
+      }
+
+      updateCatVisibility();
+      modal.hidden = false;
+      fName.focus();
+    }
+
+    function closeModal() { modal.hidden = true; }
+
+    document.getElementById('bm-cancel').addEventListener('click', closeModal);
+    document.getElementById('bm-backdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+
+    document.getElementById('bm-save').addEventListener('click', function () {
+      var name    = fName.value.trim();
+      var url     = fUrl.value.trim();
+      var note    = fNote.value.trim();
+      var section = fSection.value;
+      var cat     = fCat.value;
+
+      var invalid = false;
+      if (!name) { fName.style.borderColor = '#b02010'; invalid = true; }
+      if (!url)  { fUrl.style.borderColor  = '#b02010'; invalid = true; }
+      if (invalid) {
+        setTimeout(function () {
+          fName.style.borderColor = '';
+          fUrl.style.borderColor  = '';
+        }, 1600);
+        return;
+      }
+
+      if (section === 'visible' && cat === '__new__') {
+        var newCat = prompt('New category name:');
+        if (!newCat || !newCat.trim()) return;
+        cat = newCat.trim();
+      }
+
+      if (modalState.mode === 'add') {
+        var entry = { id: genId(), name: name, url: url, note: note };
+        if (section === 'visible') { entry.category = cat; state.visible.push(entry); }
+        else { state.hidden.push(entry); }
+      } else {
+        var viIdx = state.visible.findIndex(function (b) { return b.id === modalState.id; });
+        var hiIdx = state.hidden.findIndex(function (b)  { return b.id === modalState.id; });
+
+        if (section === 'visible') {
+          if (hiIdx !== -1) state.hidden.splice(hiIdx, 1);
+          if (viIdx !== -1) state.visible[viIdx] = { id: modalState.id, name: name, url: url, category: cat, note: note };
+          else              state.visible.push({ id: modalState.id, name: name, url: url, category: cat, note: note });
+        } else {
+          if (viIdx !== -1) state.visible.splice(viIdx, 1);
+          if (hiIdx !== -1) state.hidden[hiIdx] = { id: modalState.id, name: name, url: url, note: note };
+          else              state.hidden.push({ id: modalState.id, name: name, url: url, note: note });
+        }
+      }
+
+      saveBookmarks(state);
+      renderVisible();
+      renderHidden();
+      closeModal();
+    });
+
+    /* ---- Delete ---- */
+    function deleteBookmark(id) {
+      var bm = state.visible.find(function (b) { return b.id === id; })
+            || state.hidden.find(function (b)  { return b.id === id; });
+      if (!bm) return;
+      if (!confirm('Remove "' + bm.name + '"?')) return;
+      state.visible = state.visible.filter(function (b) { return b.id !== id; });
+      state.hidden  = state.hidden.filter(function (b)  { return b.id !== id; });
+      saveBookmarks(state);
+      renderVisible();
+      renderHidden();
+    }
+
+    /* ---- Move / copy to another category (2026-07-12) ---- */
+    var moveModal     = document.getElementById('bm-move-modal');
+    var moveCatSelect = document.getElementById('bm-move-cat');
+    var moveTargetId  = null;
+
+    function openMoveModal(id) {
+      var bm = state.visible.find(function (b) { return b.id === id; });
+      if (!bm) return;
+      moveTargetId = id;
+      var cats = getCategories().filter(function (c) { return c !== bm.category; });
+      moveCatSelect.innerHTML = cats.map(function (c) {
+        return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
+      }).join('');
+      moveModal.hidden = false;
+    }
+
+    function closeMoveModal() {
+      moveModal.hidden = true;
+      moveTargetId = null;
+    }
+
+    document.getElementById('bm-move-cancel').addEventListener('click', closeMoveModal);
+    document.getElementById('bm-move-backdrop').addEventListener('click', closeMoveModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !moveModal.hidden) closeMoveModal();
+    });
+
+    /* Move — reassigns the bookmark's own category; it's still the same
+       object/id, so pinned state (if any) carries over untouched. */
+    document.getElementById('bm-move-move-btn').addEventListener('click', function () {
+      if (!moveTargetId || !moveCatSelect.value) return closeMoveModal();
+      var bm = state.visible.find(function (b) { return b.id === moveTargetId; });
+      if (!bm) return closeMoveModal();
+      bm.category = moveCatSelect.value;
+      saveBookmarks(state);
+      renderVisible();
+      closeMoveModal();
+    });
+
+    /* Copy — creates a new bookmark entry in the target category; the
+       original is left exactly as-is. The copy starts unpinned even if the
+       original was pinned, since "pinned" is a deliberate per-bookmark
+       choice, not something that should silently duplicate. */
+    document.getElementById('bm-move-copy-btn').addEventListener('click', function () {
+      if (!moveTargetId || !moveCatSelect.value) return closeMoveModal();
+      var bm = state.visible.find(function (b) { return b.id === moveTargetId; });
+      if (!bm) return closeMoveModal();
+      state.visible.push({
+        id: genId(), name: bm.name, url: bm.url,
+        category: moveCatSelect.value, note: bm.note
+      });
+      saveBookmarks(state);
+      renderVisible();
+      closeMoveModal();
+    });
+
+    /* ---- Behind-the-scenes toggle ---- */
+    var toggleBtn  = document.getElementById('bm-toggle');
+    var hiddenArea = document.getElementById('bm-hidden');
+
+    toggleBtn.addEventListener('click', function () {
+      hiddenOpen = !hiddenOpen;
+      hiddenArea.hidden = !hiddenOpen;
+      hiddenArea.setAttribute('aria-hidden', String(!hiddenOpen));
+      toggleBtn.setAttribute('aria-expanded', String(hiddenOpen));
+      toggleBtn.textContent = hiddenOpen ? '▴ Behind the scenes' : '▾ Behind the scenes';
+    });
+
+    /* ---- Initial render ---- */
+    renderVisible();
+    renderHidden();
+
+    /* ---- Cross-device sync bootstrap (2026-07-13) ----
+       Runs AFTER the synchronous localStorage render above, never
+       before it — the dashboard must never sit blank/flash waiting
+       on a network call. If the remote Sheet cell is still empty
+       (value === null, meaning no device has synced yet), push this
+       device's current state up so there's something for every other
+       device to pull. Otherwise, adopt the remote state as current,
+       persist it locally, and re-render — this is a plain
+       whole-value replace (last-write-wins), a deliberate simplicity
+       choice for a single-user tool with infrequent, explicit-action
+       writes, not an oversight. */
+    PkaSync.pull(LS_KEY).then(function (result) {
+      if (!result) return; /* sync unavailable this session — localStorage stands as-is */
+
+      if (result.value === null) {
+        PkaSync.push(LS_KEY, state);
+        return;
+      }
+
+      if (!isValidBookmarkShape(result.value)) {
+        console.warn('PkaSync: remote bookmarks value has an unrecognised shape — ignoring it, keeping local state.', result.value);
+        return;
+      }
+
+      if (JSON.stringify(result.value) === JSON.stringify(state)) return; /* already in sync, nothing to do */
+
+      state = result.value;
+      if (state.version !== SCHEMA_VERSION) state.version = SCHEMA_VERSION;
+      saveBookmarks(state); /* also re-pushes, harmless no-op remotely since value is unchanged */
+      renderVisible();
+      renderHidden();
+    });
+
+  }());
+
+  /* ================================================
+     NAV LINKS — personal navigation (local folders,
+     Google Drive / OneDrive folders). Same accordion +
+     modal CRUD pattern as Bookmarks above, reusing its
+     CSS classes, but a separate dataset/localStorage
+     key and no visible/hidden split. Adds a "recently
+     added" strip that surfaces new links automatically.
+  ================================================ */
+  (function () {
+    'use strict';
+
+    var LS_KEY = 'pka_navlinks';
+    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
+
+    function genId() {
+      return 'nl' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* Real, verified local paths — no Drive/OneDrive-cloud links invented;
+       David adds those himself via the Add modal since we don't have his
+       real share links.
+       Folder entries use Marcus's winexplorer:/// handler (opens native
+       Windows File Explorer instead of an in-browser directory listing);
+       file entries (a page / a .md doc) stay on file:/// as before. */
+    var SEED_NAVLINKS = [];  /* stripped for public mirror -- local-only winexplorer/file paths, meaningless off this PC */
+
+    /* Old file:/// paths for the six folder entries above — used to migrate
+       any already-saved localStorage entries onto the new winexplorer:/// scheme. */
+    var FOLDER_PATHS_TO_MIGRATE = [];  /* stripped for public mirror -- real internal paths + Windows username; inert anyway on a fresh install with empty localStorage */
+
+    var SEED_TIME = Date.now() - (1000 * 60 * 60 * 24 * 365); /* backdated so any real add ranks above it */
+
+    function getLinks() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+
+    function saveLinks(data) {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) {}
+    }
+
+    function seedItems() {
+      return SEED_NAVLINKS.map(function (b) {
+        return { id: genId(), name: b.name, url: b.url, category: b.category, dateAdded: SEED_TIME };
+      });
+    }
+
+    function freshLinks() {
+      return { version: SCHEMA_VERSION, items: seedItems() };
+    }
+
+    /* Defensive shape check — catches stale/incompatible data saved by an
+       older code version so it can never silently break rendering. */
+    function isValidLinksShape(data) {
+      return !!data
+        && Array.isArray(data.items)
+        && data.items.every(function (b) {
+          return b && typeof b.id === 'string' && typeof b.name === 'string'
+            && typeof b.url === 'string' && typeof b.category === 'string';
+        });
+    }
+
+    function initLinks() {
+      if (!localStorage.getItem(LS_KEY)) {
+        var fresh = freshLinks();
+        saveLinks(fresh);
+        return fresh;
+      }
+
+      var data = getLinks();
+
+      if (!isValidLinksShape(data)) {
+        /* Unrecognised/corrupt shape — fall back to fresh seed data for
+           THIS key only, rather than crashing or rendering blank. */
+        var reset = freshLinks();
+        saveLinks(reset);
+        return reset;
+      }
+
+      var changed = data.version !== SCHEMA_VERSION;
+
+      /* Migration: an earlier build seeded one clearly-fake placeholder
+         ("Example Folder…"). Now that real entries exist, drop it — and
+         if nothing real had been added yet, replace it with the real seed. */
+      if (data && data.items) {
+        var hadPlaceholder = data.items.some(function (b) { return b.name && b.name.indexOf('Example Folder') === 0; });
+        if (hadPlaceholder) {
+          data.items = data.items.filter(function (b) { return !(b.name && b.name.indexOf('Example Folder') === 0); });
+          if (data.items.length === 0) data.items = seedItems();
+          changed = true;
+        }
+      }
+
+      /* Migration: folder entries saved under the old file:/// scheme move
+         to Marcus's winexplorer:/// handler (native Explorer, no in-browser
+         directory listing) — rewritten in place, once, on load. */
+      if (data && data.items) {
+        data.items.forEach(function (b) {
+          if (b.url && b.url.indexOf('file:///') === 0) {
+            var path = b.url.slice('file:///'.length);
+            if (FOLDER_PATHS_TO_MIGRATE.indexOf(path) !== -1) {
+              b.url = 'winexplorer:///' + path;
+              changed = true;
+            }
+          }
+        });
+      }
+
+      if (changed) {
+        data.version = SCHEMA_VERSION;
+        saveLinks(data);
+      }
+
+      return data;
+    }
+
+    /* ---- State ---- */
+    var state      = initLinks();
+    var openCat    = state.items.length ? state.items[0].category : null;
+    var modalState = { mode: 'add', id: null };
+
+    function getCategories() {
+      var seen = [];
+      state.items.forEach(function (b) {
+        if (seen.indexOf(b.category) === -1) seen.push(b.category);
+      });
+      return seen;
+    }
+
+    function chipHtml(b) {
+      return '<div class="bm-chip" data-id="' + esc(b.id) + '">'
+        + '<a href="' + esc(b.url) + '" target="_blank" rel="noopener noreferrer" class="bm-chip-link" title="' + esc(b.name) + '">'
+        + '<span class="bm-chip-name">' + esc(b.name) + '</span>'
+        + '<span class="bm-chip-ext" aria-hidden="true">&#8599;</span>'
+        + (b.note ? '<span class="bm-chip-note">' + esc(b.note) + '</span>' : '')
+        + '</a>'
+        + '<span class="bm-chip-controls">'
+        + '<button class="bm-ctrl-btn bm-ctrl-edit" data-id="' + esc(b.id) + '" title="Edit link">&#9998;</button>'
+        + '<button class="bm-ctrl-btn bm-ctrl-delete" data-id="' + esc(b.id) + '" title="Delete link">&#10005;</button>'
+        + '</span>'
+        + '</div>';
+    }
+
+    /* ---- Render: category accordion ---- */
+    function renderVisible() {
+      var container = document.getElementById('nl-visible');
+      var cats = getCategories();
+
+      if (cats.indexOf(openCat) === -1) openCat = cats[0] || null;
+
+      var html = cats.map(function (cat) {
+        var isOpen = cat === openCat;
+        var items  = state.items.filter(function (b) { return b.category === cat; })
+          .sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var panelId = 'nlp-' + cat.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+        var chips = items.map(chipHtml).join('');
+
+        return '<div class="bm-accordion-item' + (isOpen ? ' open' : '') + '" data-cat="' + esc(cat) + '">'
+          + '<div class="bm-accordion-header">'
+          + '<button class="bm-cat-toggle" data-category="' + esc(cat) + '" aria-expanded="' + isOpen + '" aria-controls="' + panelId + '">'
+          + '<span class="bm-chevron" aria-hidden="true">&#9656;</span>'
+          + '<span class="bm-category-label">' + esc(cat) + '</span>'
+          + '</button>'
+          + '<button class="bm-add-btn" data-add-cat="' + esc(cat) + '">&#65291; Add</button>'
+          + '</div>'
+          + '<div class="bm-accordion-panel" id="' + panelId + '" role="region" aria-label="' + esc(cat) + ' links">'
+          + '<div class="bm-panel-inner">'
+          + '<div class="bm-chips">' + (chips || '<span class="bm-empty">No links yet.</span>') + '</div>'
+          + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+
+      container.innerHTML = html || '<span class="bm-empty">No links yet — use Add to create a category.</span>';
+      bindVisibleEvents();
+      bindRowEvents(container);
+    }
+
+    /* ---- Shared row-level events (edit / delete) for any container ---- */
+    function bindRowEvents(root) {
+      root.querySelectorAll('.bm-ctrl-edit').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          openModal('edit', btn.dataset.id);
+        });
+      });
+      root.querySelectorAll('.bm-ctrl-delete').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          deleteLink(btn.dataset.id);
+        });
+      });
+    }
+
+    /* ---- Accordion + add-button events ---- */
+    function bindVisibleEvents() {
+      document.querySelectorAll('#nl-visible .bm-cat-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var cat    = btn.dataset.category;
+          var item   = btn.closest('.bm-accordion-item');
+          var isOpen = item.classList.contains('open');
+
+          document.querySelectorAll('#nl-visible .bm-accordion-item').forEach(function (el) {
+            el.classList.remove('open');
+            el.querySelector('.bm-cat-toggle').setAttribute('aria-expanded', 'false');
+          });
+
+          if (!isOpen) {
+            item.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            openCat = cat;
+          } else {
+            openCat = null;
+          }
+        });
+      });
+
+      document.querySelectorAll('#nl-visible .bm-add-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openModal('add', null, btn.dataset.addCat);
+        });
+      });
+    }
+
+    /* ---- Modal ---- */
+    var modal    = document.getElementById('nl-modal');
+    var fName    = document.getElementById('nl-f-name');
+    var fUrl     = document.getElementById('nl-f-url');
+    var fCat     = document.getElementById('nl-f-cat');
+    var fNote    = document.getElementById('nl-f-note');
+
+    function populateCatSelect(selected) {
+      var cats = getCategories();
+      fCat.innerHTML = cats.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === selected ? ' selected' : '') + '>' + esc(c) + '</option>';
+      }).join('') + '<option value="__new__">&#65291; New category…</option>';
+    }
+
+    function openModal(mode, id, prefillCat) {
+      fName.style.borderColor = '';
+      fUrl.style.borderColor  = '';
+      modalState = { mode: mode, id: id };
+
+      if (mode === 'edit') {
+        var link = state.items.find(function (b) { return b.id === id; });
+        if (!link) return;
+        fName.value = link.name;
+        fUrl.value  = link.url;
+        fNote.value = link.note || '';
+        populateCatSelect(link.category || '');
+        document.getElementById('nl-modal-title').textContent = 'Edit Nav Link';
+      } else {
+        fName.value = '';
+        fUrl.value  = '';
+        fNote.value = '';
+        populateCatSelect(prefillCat || getCategories()[0] || 'Local Folders');
+        document.getElementById('nl-modal-title').textContent = 'Add Nav Link';
+      }
+
+      modal.hidden = false;
+      fName.focus();
+    }
+
+    function closeModal() { modal.hidden = true; }
+
+    document.getElementById('nl-cancel').addEventListener('click', closeModal);
+    document.getElementById('nl-backdrop').addEventListener('click', closeModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+
+    document.getElementById('nl-save').addEventListener('click', function () {
+      var name = fName.value.trim();
+      var url  = fUrl.value.trim();
+      var note = fNote.value.trim();
+      var cat  = fCat.value;
+
+      var invalid = false;
+      if (!name) { fName.style.borderColor = '#A34430'; invalid = true; }
+      if (!url)  { fUrl.style.borderColor  = '#A34430'; invalid = true; }
+      if (invalid) {
+        setTimeout(function () {
+          fName.style.borderColor = '';
+          fUrl.style.borderColor  = '';
+        }, 1600);
+        return;
+      }
+
+      if (cat === '__new__') {
+        var newCat = prompt('New category name:');
+        if (!newCat || !newCat.trim()) return;
+        cat = newCat.trim();
+      }
+
+      if (modalState.mode === 'add') {
+        state.items.push({ id: genId(), name: name, url: url, category: cat, note: note, dateAdded: Date.now() });
+      } else {
+        var idx = state.items.findIndex(function (b) { return b.id === modalState.id; });
+        var existing = idx !== -1 ? state.items[idx] : null;
+        var entry = { id: modalState.id, name: name, url: url, category: cat, note: note, dateAdded: existing ? existing.dateAdded : Date.now() };
+        if (idx !== -1) state.items[idx] = entry;
+        else state.items.push(entry);
+      }
+
+      saveLinks(state);
+      renderVisible();
+      closeModal();
+    });
+
+    /* ---- Delete ---- */
+    function deleteLink(id) {
+      var link = state.items.find(function (b) { return b.id === id; });
+      if (!link) return;
+      if (!confirm('Remove "' + link.name + '"?')) return;
+      state.items = state.items.filter(function (b) { return b.id !== id; });
+      saveLinks(state);
+      renderVisible();
+    }
+
+    /* ---- Initial render ---- */
+    renderVisible();
+
+  }());
+
+  /* ================================================
+     QUICK NOTES — plain persistent scratchpad.
+     Deliberately localStorage-only, no live feed/API
+     (a live Todoist feed would need an API token baked
+     into this local file, which we're avoiding).
+  ================================================ */
+  (function () {
+    'use strict';
+
+    var LS_KEY = 'pka_quicknotes';
+    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
+    var textarea = document.getElementById('qn-textarea');
+    var status   = document.getElementById('qn-status');
+    if (!textarea) return;
+
+    var saveTimer = null;
+
+    function save() {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({ version: SCHEMA_VERSION, text: textarea.value }));
+        if (status) {
+          status.textContent = 'Saved';
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(function () { status.textContent = ' '; }, 1200);
+        }
+      } catch (e) {}
+    }
+
+    var debounceTimer = null;
+    textarea.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(save, 500);
+    });
+
+    /* Load — handles both the current { version, text } shape and the
+       plain-string format this used before versioning existed (or any
+       other unrecognised shape), by treating the raw stored value itself
+       as the note content so nothing David has typed is ever lost. */
+    (function loadNote() {
+      var raw = null;
+      try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
+      if (raw === null) return;
+
+      var parsed = null;
+      try { parsed = JSON.parse(raw); } catch (e) {}
+
+      if (parsed && typeof parsed === 'object' && parsed.version === SCHEMA_VERSION && typeof parsed.text === 'string') {
+        textarea.value = parsed.text;
+        return;
+      }
+
+      /* Legacy/unrecognised shape — the raw value IS the note text. */
+      textarea.value = raw;
+      save(); /* write forward into the versioned format once */
+    }());
+
+  }());
+
+  /* ================================================
+     TEAM ACTIONS — manual registry. Source data comes from
+     the global TEAM_ACTIONS_DATA (team-actions-data.js), which
+     Thomas edits directly and this page never writes back to.
+     Only "dismissed" state lives in localStorage, keyed by each
+     entry's stable id, so a dismissal persists locally without
+     ever touching the data file.
+  ================================================ */
+  (function () {
+    'use strict';
+
+    var LS_KEY = 'pka_team_actions_dismissed';
+    var list = document.getElementById('ta-list');
+    if (!list) return;
+
+    var DATA = (typeof TEAM_ACTIONS_DATA !== 'undefined' && Array.isArray(TEAM_ACTIONS_DATA))
+      ? TEAM_ACTIONS_DATA
+      : [];
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* 'YYYY-MM-DD' -> '4 Jul 2026'. Falls back to the raw string if it
+       doesn't parse, rather than showing "Invalid Date" or throwing. */
+    function formatDate(iso) {
+      if (!iso) return '';
+      var parts = String(iso).split('-');
+      if (parts.length !== 3) return String(iso);
+      var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+      if (isNaN(d.getTime())) return String(iso);
+      var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+    }
+
+    function formatAmount(n) {
+      if (typeof n !== 'number' || isNaN(n)) return '';
+      return '£' + n.toFixed(2);
+    }
+
+    function getDismissed() {
+      try {
+        var raw = localStorage.getItem(LS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return [];
+    }
+
+    function saveDismissed(ids) {
+      try { localStorage.setItem(LS_KEY, JSON.stringify(ids)); } catch (e) {}
+      /* Best-effort cross-device push (2026-07-13) — see PkaSync above.
+         Fire-and-forget, never blocks the dismiss action itself. */
+      PkaSync.push(LS_KEY, ids);
+    }
+
+    var dismissed = getDismissed();
+    if (!Array.isArray(dismissed)) dismissed = [];
+
+    /* Prune dismissed ids that no longer correspond to any entry
+       (the entry was removed from the data file) — keeps this
+       localStorage key from growing forever. */
+    var dataIds = DATA.map(function (a) { return a && a.id; });
+    var pruned = dismissed.filter(function (id) { return dataIds.indexOf(id) !== -1; });
+    if (pruned.length !== dismissed.length) {
+      dismissed = pruned;
+      saveDismissed(dismissed);
+    }
+
+    function render() {
+      var visible = DATA.filter(function (a) {
+        return a && a.id && dismissed.indexOf(a.id) === -1;
+      });
+
+      if (!visible.length) {
+        list.innerHTML = '<span class="ta-empty">Nothing outstanding right now.</span>';
+        return;
+      }
+
+      list.innerHTML = visible.map(function (a) {
+        var sourceHtml = '';
+        if (a.source && a.link) {
+          sourceHtml = '<a class="ta-row-source" href="' + esc(a.link) + '" target="_blank" rel="noopener noreferrer">' + esc(a.source) + ' &#8599;</a>';
+        } else if (a.source) {
+          sourceHtml = '<span class="ta-row-source">' + esc(a.source) + '</span>';
+        }
+
+        var isPayable = a.type === 'payable';
+        var payableBadgeHtml = isPayable ? '<span class="ta-payable-badge">Payable</span>' : '';
+        var payableInfoHtml = '';
+        if (isPayable) {
+          var bits = [];
+          if (typeof a.amount === 'number') {
+            bits.push('<span class="ta-row-payable-amount">' + esc(formatAmount(a.amount)) + '</span>');
+          }
+          if (a.invoiceDate) {
+            bits.push('<span>Invoiced ' + esc(formatDate(a.invoiceDate)) + '</span>');
+          }
+          if (a.dueDate) {
+            bits.push('<span>Due ' + esc(formatDate(a.dueDate)) + '</span>');
+          }
+          if (bits.length) {
+            payableInfoHtml = '<div class="ta-row-payable-info">'
+              + bits.join('<span class="ta-row-payable-sep" aria-hidden="true">&middot;</span>')
+              + '</div>';
+          }
+        }
+
+        return '<div class="ta-row' + (isPayable ? ' ta-row--payable' : '') + '" data-id="' + esc(a.id) + '">'
+          + '<div class="ta-row-main">'
+          + payableBadgeHtml
+          + '<span class="ta-row-text">' + esc(a.text || '') + '</span>'
+          + payableInfoHtml
+          + sourceHtml
+          + '</div>'
+          + '<button class="ta-dismiss" data-id="' + esc(a.id) + '" title="Dismiss">&#10005;</button>'
+          + '</div>';
+      }).join('');
+
+      list.querySelectorAll('.ta-dismiss').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.dataset.id;
+          if (dismissed.indexOf(id) === -1) {
+            dismissed.push(id);
+            saveDismissed(dismissed);
+          }
+          render();
+        });
+      });
+    }
+
+    render();
+
+    /* ---- Cross-device sync bootstrap (2026-07-13) ----
+       Same deferred-after-first-render pattern as Bookmarks above.
+       One deliberate difference: dismissed-ids use a UNION merge, not
+       a plain overwrite. A dismissal is a one-way, add-only action
+       (there's no "un-dismiss" control in this UI) — if David
+       dismisses item A on the PC and item B on the laptop before
+       either device has synced, a plain last-write-wins overwrite
+       would silently make one of those items reappear, which reads as
+       a bug even though nothing is technically "wrong". Union avoids
+       that regression and is no more complex to write than an
+       overwrite would have been. */
+    PkaSync.pull(LS_KEY).then(function (result) {
+      if (!result) return; /* sync unavailable this session — localStorage stands as-is */
+
+      if (result.value === null) {
+        PkaSync.push(LS_KEY, dismissed);
+        return;
+      }
+
+      if (!Array.isArray(result.value)) {
+        console.warn('PkaSync: remote dismissed-state value has an unrecognised shape — ignoring it, keeping local state.', result.value);
+        return;
+      }
+
+      var merged = dismissed.slice();
+      result.value.forEach(function (id) {
+        if (typeof id === 'string' && merged.indexOf(id) === -1) merged.push(id);
+      });
+
+      /* Re-apply the same existing prune (drop ids for entries no
+         longer in TEAM_ACTIONS_DATA) to the merged set. */
+      merged = merged.filter(function (id) { return dataIds.indexOf(id) !== -1; });
+
+      if (merged.length === dismissed.length && merged.every(function (id) { return dismissed.indexOf(id) !== -1; })) {
+        return; /* already in sync, nothing to do */
+      }
+
+      dismissed = merged;
+      saveDismissed(dismissed); /* also re-pushes the merged (possibly wider) set, keeping the Sheet current */
+      render();
+    });
+
+  }());
+
+  /* ================================================
+     PROJECT BUILDS
+  ================================================ */
+  var PROJECT_BUILDS = [
+    { name: 'PKA Dashboard', desc: 'Internal command centre. Muted green theme.',                              status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'Book Production Hub', desc: 'Re-platformed Headpress Hub on Google Sheets + GitHub Pages, cross-device. Combines PO tracker, print estimates, Book Bible, Book Planner, ISBN pool. Supersedes Headpress Hub (2026-06-29 local-file build).', status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'WriteApp',      desc: 'Distraction-free writing tool. v1 complete; iteration ongoing.',          status: 'active' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'Web Portfolio', desc: 'Personal website and professional portfolio.',                             status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'PARA',         desc: 'Personal and business file organisation system. OneDrive, external HDDs, and local drives.', status: 'inbuild' }
+    /* PARA: no obsidianLog — no corresponding file in Claude/Project Builds/,
+       omitted rather than guessed (per 2026-07-11 brief). */
+  ];
+
+  (function () {
+    var BADGE_LABEL = { inbuild: 'In Build', active: 'Active' };
+    var list = document.getElementById('builds-list');
+    if (!list) return;
+    list.innerHTML = PROJECT_BUILDS.map(function (p) {
+      var logHtml = p.obsidianLog
+        ? '<a class="build-obsidian-link" href="' + p.obsidianLog + '" target="_blank" rel="noopener noreferrer">Obsidian log &#8599;</a>'
+        : '';
+      return '<div class="build-row">'
+        + '<div class="build-info">'
+        + '<span class="build-name">' + p.name + '</span>'
+        + '<span class="build-desc">' + p.desc + '</span>'
+        + logHtml
+        + '</div>'
+        + '<span class="build-badge build-badge--' + p.status + '">' + BADGE_LABEL[p.status] + '</span>'
+        + '</div>';
+    }).join('');
+  }());
+
+  /* ================================================
+     TEAM PORTFOLIO — data-driven card grid.
+     Adding a new hire is one entry in TEAM_MEMBERS,
+     not a hand-built <article> block.
+  ================================================ */
+  var TEAM_MEMBERS = [
+    {
+      key: 'thomas', name: 'Thomas', role: 'Lead AI Orchestrator &amp; Team Director',
+      photo: 'Thomas.png', file: 'THOMAS.md',
+      persona: '&ldquo;Calm, decisive, strategic &mdash; he sees the big picture and always knows which team member is best suited for any given task.&rdquo;',
+      skills: [
+        'Strategic task routing &amp; team coordination',
+        'Single owner&ndash;team interface &amp; liaison',
+        'Hiring pipeline management',
+        'Team integrity &amp; role boundary oversight',
+        'Outcome reporting &amp; status communication'
+      ]
+    },
+    {
+      key: 'fred', name: 'Fred', role: 'Senior Researcher',
+      photo: 'Fred.jpg', file: 'FRED.md',
+      persona: '&ldquo;Methodical, intellectually curious, and thorough &mdash; when Fred hands you a report, you can trust it&rsquo;s complete.&rdquo;',
+      skills: [
+        'Real-world role research &amp; skills mapping',
+        'Structured Role Research Report delivery',
+        'Workforce &amp; domain intelligence',
+        'Hiring brief preparation for Miss Anderson',
+        'Knowledge synthesis &amp; documentation'
+      ]
+    },
+    {
+      key: 'anderson', name: 'Miss Anderson', role: 'Head of Human Resources',
+      photo: 'Miss Anderson.png', file: 'MISS_ANDERSON.md',
+      persona: '&ldquo;Warm but professional &mdash; she has an eye for talent and a gift for bringing out the best in people, even AI ones.&rdquo;',
+      skills: [
+        'New hire profile creation &amp; persona design',
+        'Team identity &amp; culture definition',
+        'AI portrait image prompt authoring',
+        'Team Roster maintenance',
+        'Hiring pipeline execution'
+      ]
+    },
+    {
+      key: 'mia', name: 'Mia Chen', role: 'Frontend Developer / UI Engineer',
+      photo: 'Mia Chen.jpg', file: 'MIA_CHEN.md',
+      persona: '&ldquo;She brings a quiet intensity to her work &mdash; methodical, precise, and genuinely passionate about the experience sitting between the user and the code.&rdquo;',
+      skills: [
+        'JavaScript (ES6+), HTML5 &amp; CSS3',
+        'Responsive &amp; adaptive design',
+        'Component-based architecture',
+        'API integration &amp; data rendering',
+        'Performance optimisation &amp; accessibility (WCAG)'
+      ]
+    },
+    {
+      key: 'jack', name: 'Jack Mercer', role: 'CSS Specialist / Frontend Layout Engineer',
+      photo: 'Jack Mercer.jpg', file: 'JACK.md',
+      persona: '&ldquo;He does not draw attention to himself &mdash; he draws attention to the work, and when it&rsquo;s done right, nobody notices it at all.&rdquo;',
+      skills: [
+        'Expert CSS Grid, Flexbox &amp; Custom Properties',
+        'Multi-theme architecture &mdash; dark/light mode systems',
+        'Fluid responsive typography with <code>clamp()</code>',
+        'Cross-browser rendering &amp; compatibility',
+        'CSS animation &amp; paint-performance optimisation'
+      ]
+    },
+    {
+      key: 'marcus', name: 'Marcus Webb', role: 'Systems &amp; Tools Administrator / AI Infrastructure',
+      photo: 'Marcus Webb.jpg', file: 'MARCUS_WEBB.md',
+      persona: '&ldquo;He fixed the problem before you knew there was one &mdash; methodical, unhurried, and precise in every diagnosis.&rdquo;',
+      skills: [
+        'Claude Code CLI configuration &amp; hooks',
+        'Anthropic API authentication &amp; credentials',
+        'PowerShell 7+ scripting &amp; automation',
+        'MCP server registration &amp; troubleshooting',
+        'Credential security &amp; environment management'
+      ]
+    },
+    {
+      key: 'cara', name: 'Cara Nolan', role: 'Document Administration Intern',
+      photo: 'Cara Nolan.jpg', file: 'CARA_NOLAN.md',
+      persona: '&ldquo;She reads a document to understand its structure, not its subject &mdash; and if the headings are wrong, she finds that genuinely troubling.&rdquo;',
+      skills: [
+        'Microsoft Word styles system mastery',
+        'Navigation Pane auditing &amp; correction',
+        'Table of Contents generation &amp; maintenance',
+        'Document template application &amp; conformance',
+        'PDF export &amp; disciplined file management'
+      ]
+    },
+    {
+      key: 'evelyn', name: 'Evelyn Cross', role: 'Executive Assistant / Chief of Staff',
+      photo: 'Evelyn Cross.jpg', file: 'EVELYN_CROSS.md',
+      persona: '&ldquo;She reads a messy pile of tasks and emails the way other people read a shopping list &mdash; sort, sequence, done.&rdquo;',
+      skills: [
+        'Todoist mastery &mdash; labels, filters &amp; recurring tasks',
+        'Inbox triage &amp; prioritisation frameworks',
+        'Time-blocking &amp; realistic day planning',
+        'GTD-style weekly review discipline',
+        'Cross-project workload &amp; capacity tracking'
+      ]
+    },
+    {
+      key: 'sadie', name: 'Sadie Marsh', role: 'UK Bookkeeper &amp; VAT/Xero Specialist',
+      photo: 'Sadie Marsh.jpg', file: 'SADIE_MARSH.md',
+      persona: '&ldquo;Nothing about a pile of unpublished Hubdoc receipts rattles her &mdash; she just starts at the top and works down.&rdquo;',
+      skills: [
+        'Xero &amp; Hubdoc bookkeeping administration',
+        'Bank feed reconciliation &amp; categorisation',
+        'UK VAT return preparation &amp; MTD filing',
+        'Publishing VAT quirks &mdash; zero-rating, royalties, exports',
+        'PO log reconciliation &amp; deadline flagging'
+      ]
+    },
+    {
+      key: 'eleanor', name: 'Eleanor Voss', role: 'US Tax Compliance Advisor',
+      photo: 'Eleanor Voss.jpg', file: 'ELEANOR_VOSS.md',
+      persona: '&ldquo;She does not perform expertise &mdash; she applies it. When Eleanor delivers guidance, you know exactly what to do next.&rdquo;',
+      skills: [
+        'US sales &amp; use tax compliance advisory',
+        'Nexus exposure assessment (physical &amp; economic)',
+        'Resale exemption certificate (ST-10) guidance',
+        'Virginia Department of Taxation expertise',
+        'Non-US publisher &amp; distributor compliance'
+      ]
+    }
+  ];
+
+  (function () {
+    var grid = document.getElementById('team-grid');
+    if (!grid) return;
+
+    function encodePath(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
+
+    grid.innerHTML = TEAM_MEMBERS.map(function (m) {
+      var photoUrl = '../../Team/' + encodePath(m.photo);
+      var fileUrl  = '../../Team/' + encodePath(m.file);
+      return '<article class="team-card" aria-label="' + m.name + ', ' + m.role.replace(/<[^>]+>/g, '') + '">'
+        + '<div class="card-accordion-header">'
+        + '<div class="card-identity">'
+        + '<div class="card-avatar-wrap">'
+        + '<div class="card-avatar has-photo" style="background-color: var(--av-' + m.key + '); background-image: url(\'' + photoUrl + '\'); background-position: center top;"></div>'
+        + '</div>'
+        + '<div class="card-meta">'
+        + '<p class="card-name">' + m.name + '</p>'
+        + '<p class="card-role">' + m.role + '</p>'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="card-panel">'
+        + '<div class="card-panel-inner">'
+        + '<p class="card-persona">' + m.persona + '</p>'
+        + '<ul class="card-skills">' + m.skills.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>'
+        + '<a class="card-more" href="' + fileUrl + '" target="_blank" rel="noopener noreferrer">Read full brief &#8599;</a>'
+        + '</div>'
+        + '</div>'
+        + '</article>';
+    }).join('');
+  }());
+
+  /* ================================================
+     TEAM PORTFOLIO — foldout, collapsed by default
+     (same collapse/expand pattern as the Bookmarks
+     "Behind the scenes" toggle)
+  ================================================ */
+  (function () {
+    var toggle = document.getElementById('team-toggle');
+    var wrap   = document.getElementById('team-grid-wrap');
+    if (!toggle || !wrap) return;
+
+    var open = false;
+
+    toggle.addEventListener('click', function () {
+      open = !open;
+      wrap.hidden = !open;
+      wrap.setAttribute('aria-hidden', String(!open));
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.innerHTML = open ? '&#9652; Hide team' : '&#9662; Show team';
+    });
+  }());
+
+  /* ================================================
+     ANCHOR NAV — active-highlight-on-scroll. A nice-to-have,
+     not load-bearing: the nav links work via plain #anchor
+     hrefs + the page's global scroll-behavior:smooth even if
+     this never runs. Just highlights whichever section is
+     currently in view as the page scrolls past it.
+  ================================================ */
+  (function () {
+    var navItems = Array.prototype.slice.call(document.querySelectorAll('.dash-nav-item'));
+    if (!navItems.length || !('IntersectionObserver' in window)) return;
+
+    var navById = {};
+    navItems.forEach(function (a) { navById[a.getAttribute('href').slice(1)] = a; });
+
+    var sections = ['sec-bookmarks', 'sec-navlinks', 'sec-actions', 'sec-builds', 'sec-portfolio']
+      .map(function (id) { return document.getElementById(id); })
+      .filter(Boolean);
+    if (!sections.length) return;
+
+    function setActive(id) {
+      navItems.forEach(function (a) { a.classList.remove('active'); });
+      if (navById[id]) navById[id].classList.add('active');
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) setActive(entry.target.id);
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+
+    sections.forEach(function (sec) { observer.observe(sec); });
+  }());
+
+  </script>
+
+</body>
+</html>
