@@ -26,25 +26,41 @@
     }
 
     :root {
-      /* Muted green colour palette */
-      --ink-rgb:           32, 41, 32;      /* base for tinted borders/shadows */
-      --accent-rgb:        75, 110, 83;     /* base for tinted accent fills   */
+      /* Vivid re-skin (2026-07-14, Mia Chen) — cream page, white cards,
+         solid black borders/ink text, matching the nav-anchors-2026-07-08
+         wireframe David asked to make live. Functional colours (accent
+         green, danger, payable amber, bookmark category colours, avatar
+         identity colours, build-status colours) are DELIBERATELY UNCHANGED
+         from the muted theme — this is a chrome/background/border/text
+         swap layered on top, not a recolour of what colour means what.
+         Source: wireframes\nav-anchors-2026-07-08.html */
+      --ink-rgb:           17, 17, 17;      /* base for borders/shadows — true black now, was dark green-black */
+      --accent-rgb:        75, 110, 83;     /* base for tinted accent fills — unchanged, still functional green */
 
-      --bg-page:           #F3F5F0;
-      --bg-card:           #E9EEE4;
-      --bg-card-hover:     #DFE7D8;
-      --border-subtle:     rgba(var(--ink-rgb), 0.1);
-      --border-card:       rgba(var(--accent-rgb), 0.2);
-      --border-card-hover: rgba(var(--accent-rgb), 0.45);
-      --text-primary:      #202920;
-      --text-secondary:    #4B5C46;
-      --text-muted:        #7C8A73;
+      --bg-page:           #FBF6EA;
+      --bg-card:           #FFFFFF;
+      --bg-card-hover:     #F6F1E2;
+      --border-subtle:     rgba(var(--ink-rgb), 0.14);
+      --border-card:       #111111;
+      --border-card-hover: #111111;
+      --text-primary:      #14130F;
+      --text-secondary:    #4B453C;
+      --text-muted:        #6B6459;
       --accent:            #4B6E53;
       --accent-alt:        #6B7F3F;         /* secondary status tone, same green family */
       --accent-dim:        rgba(var(--accent-rgb), 0.08);
-      --divider:           rgba(var(--ink-rgb), 0.1);
+      --divider:           rgba(var(--ink-rgb), 0.14);
       --danger:            #A34430;
       --danger-rgb:        163, 68, 48;
+
+      /* Build status colours, carried over from Mia's 2026-07-08 wireframes.
+         inbuild/active are the two statuses actually used today; hold/planned
+         defined for parity so a future 'hold' or 'planned' status doesn't
+         render an unstyled badge — not otherwise used yet. */
+      --build-inbuild: #5FA89C;
+      --build-active:  #5B8A62;
+      --build-hold:    #B8894A;
+      --build-planned: #9AA5B1;
 
       /* Payable accent — warm amber/rust, distinct from both --danger
          (red-brick, "something's wrong") and --panel-bg (autumn yellow,
@@ -143,7 +159,7 @@
       gap: 0.3rem;
       background: var(--bg-card);
       color: var(--text-secondary);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: 999px;
       padding: 0.4rem 0.95rem;
       font-family: var(--font-sans);
@@ -175,7 +191,7 @@
       align-items: center;
       gap: 0.2rem;
       background: none;
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: 999px;
       padding: 0.15rem 0.6rem;
       font-family: var(--font-sans);
@@ -269,7 +285,7 @@
     /* Accordion item — shaped, green-tinted card, same treatment as .build-row */
     .bm-accordion-item {
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       margin-bottom: 0.5rem;
@@ -604,7 +620,7 @@
       position: relative;
       z-index: 1;
       background: var(--bg-page);
-      border: 1px solid rgba(var(--accent-rgb), 0.3);
+      border: 2px solid var(--border-card);
       border-radius: 12px;
       padding: 2rem;
       width: min(460px, 100%);
@@ -730,7 +746,7 @@
 
     .qn-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       padding: 0.75rem;
@@ -782,7 +798,7 @@
     ============================================== */
     .ta-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       padding: 0.75rem;
@@ -927,7 +943,7 @@
 
     .team-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       overflow: hidden;
@@ -1145,7 +1161,7 @@
       justify-content: space-between;
       gap: 1.25rem;
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       padding: 0.85rem 1.25rem;
@@ -1206,15 +1222,27 @@
     }
 
     .build-badge--inbuild {
-      background: rgba(var(--accent-rgb), 0.12);
-      color: #3F5D42;
-      border: 1px solid rgba(var(--accent-rgb), 0.25);
+      background: var(--build-inbuild);
+      color: #fff;
+      border: 1px solid var(--build-inbuild);
     }
 
     .build-badge--active {
-      background: rgba(107, 127, 63, 0.14);
-      color: #55651F;
-      border: 1px solid rgba(107, 127, 63, 0.3);
+      background: var(--build-active);
+      color: #fff;
+      border: 1px solid var(--build-active);
+    }
+
+    .build-badge--hold {
+      background: var(--build-hold);
+      color: #fff;
+      border: 1px solid var(--build-hold);
+    }
+
+    .build-badge--planned {
+      background: var(--build-planned);
+      color: #fff;
+      border: 1px solid var(--build-planned);
     }
 
 
@@ -1244,7 +1272,7 @@
       gap: 0.4rem;
       text-decoration: none;
       background: var(--bg-card);
-      border: 1px solid var(--border-card);
+      border: 2px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       padding: 0.7rem 0.5rem;
@@ -2864,7 +2892,7 @@
      PROJECT BUILDS
   ================================================ */
   var PROJECT_BUILDS = [
-    { name: 'PKA Dashboard', desc: 'Internal command centre. Muted green theme.',                              status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'PKA Dashboard', desc: 'Internal command centre. Vivid theme (re-skinned 2026-07-14).',            status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
     { name: 'Book Production Hub', desc: 'Re-platformed Headpress Hub on Google Sheets + GitHub Pages, cross-device. Combines PO tracker, print estimates, Book Bible, Book Planner, ISBN pool. Supersedes Headpress Hub (2026-06-29 local-file build).', status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
     { name: 'WriteApp',      desc: 'Distraction-free writing tool. v1 complete; iteration ongoing.',          status: 'active' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
     { name: 'Web Portfolio', desc: 'Personal website and professional portfolio.',                             status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
