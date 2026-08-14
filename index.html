@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PKA Dashboard</title>
+  <title>PKA Management Command Centre — Internal Operations</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4B6E53">
@@ -26,15 +26,24 @@
     }
 
     :root {
-      /* Vivid re-skin (2026-07-14, Mia Chen) — cream page, white cards,
-         solid black borders/ink text, matching the nav-anchors-2026-07-08
-         wireframe David asked to make live. Functional colours (accent
-         green, danger, payable amber, bookmark category colours, avatar
-         identity colours, build-status colours) are DELIBERATELY UNCHANGED
-         from the muted theme — this is a chrome/background/border/text
-         swap layered on top, not a recolour of what colour means what.
-         Source: wireframes\nav-anchors-2026-07-08.html */
-      --ink-rgb:           17, 17, 17;      /* base for borders/shadows — true black now, was dark green-black */
+      /* Vivid re-skin, ROUND 2 (2026-08-01, Mia Chen) — this now takes its
+         values directly from Team Inbox\actions-wireframe-2026-07-08.html,
+         applied DASHBOARD-WIDE per David's explicit round-2 direction
+         (relayed via Thomas). That wireframe was originally scoped to a
+         since-dropped "Actions For Me" feature and its own footer shows
+         the rest of the dashboard staying muted "for contrast only" — but
+         David has now told us to ignore that scoping note and take the
+         bold black/cream visual language system-wide. This SUPERSEDES the
+         2026-07-14 round-1 re-skin below (which was itself already a
+         partial black/cream pass) — round 2 pushes borders, shadows and
+         corner radius further toward the wireframe's literal values.
+         Functional colours (accent green, danger, payable amber, bookmark
+         category colours, avatar identity colours, build-status colours)
+         are STILL deliberately unchanged — same precedent as round 1, see
+         build report MIA_CHEN_PKADashboardRound2_2026-08-01.md for the
+         reasoning on what counts as "chrome" (safe to reskin) vs
+         "functional/semantic" (left alone). */
+      --ink-rgb:           17, 17, 17;      /* base for borders/shadows — true black, matches wireframe #111 */
       --accent-rgb:        75, 110, 83;     /* base for tinted accent fills — unchanged, still functional green */
 
       --bg-page:           #FBF6EA;
@@ -54,20 +63,13 @@
       --danger-rgb:        163, 68, 48;
 
       /* Build status colours, carried over from Mia's 2026-07-08 wireframes.
-         inbuild/active are the two statuses actually used today; hold/planned
-         defined for parity so a future 'hold' or 'planned' status doesn't
-         render an unstyled badge — not otherwise used yet. */
+         inbuild/active/hold are all live today (hold: PARA, since the
+         2026-08-01 links-hub build-out); planned stays defined for parity
+         so a future 'planned' status doesn't render an unstyled badge. */
       --build-inbuild: #5FA89C;
       --build-active:  #5B8A62;
       --build-hold:    #B8894A;
       --build-planned: #9AA5B1;
-
-      /* Payable accent — warm amber/rust, distinct from both --danger
-         (red-brick, "something's wrong") and --panel-bg (autumn yellow,
-         already the row background). Reserved for money-owed rows only. */
-      --payable:           #B8722E;
-      --payable-rgb:       184, 114, 46;
-      --payable-text:      #7A4A1B;
 
       /* Muted autumn yellow — expanded-panel tone, distinct from the
          green header cards but still within the same warm/earthy family */
@@ -85,6 +87,7 @@
       --av-evelyn:         #527056;
       --av-sadie:          #7A8F4E;
       --av-eleanor:        #35594A;
+      --av-priya:          #4E7A5A;
 
       /* Typography */
       --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -94,10 +97,17 @@
          (see 2026-07-11 brief) over the general-purpose --font-sans stack. */
       --font-legible: system-ui, "Segoe UI", Calibri, Verdana, sans-serif;
 
-      /* Geometry */
-      --radius-card:  12px;
-      --shadow-card:  0 2px 12px rgba(var(--ink-rgb), 0.1);
-      --shadow-hover: 0 6px 28px rgba(var(--ink-rgb), 0.18);
+      /* Geometry — round 2 (2026-08-01): generous rounded corners + a
+         bold, hard-edge offset shadow (no blur), ported from the
+         wireframe's .a-card treatment (4px 4px 0 rgba(17,17,17,.9))
+         rather than the soft drop-shadow round 1 used. --shadow-card is
+         used at rest, --shadow-hover on hover — hover bumps the offset up
+         a notch (6px vs 4px) rather than adding blur, so the "lift" reads
+         as the card pushing further into the hard-shadow style, not
+         reverting to a softer one. */
+      --radius-card:  16px;
+      --shadow-card:  4px 4px 0 rgba(var(--ink-rgb), 0.9);
+      --shadow-hover: 6px 6px 0 rgba(var(--ink-rgb), 0.9);
 
       /* Bookmark category colour identity — one hue per live category,
          carried over from Mia's 2026-07-08 nav wireframes (same 8 categories
@@ -111,6 +121,20 @@
       --cat-writing:    #B8A23E;
       --cat-ai:         #4AA8A0;
       --cat-personal:   #9A958A;
+
+      /* Quick Links category identity colours (added 2026-08-12, Mia Chen
+         — grouped-categories build, per David's mockup sign-off). Fresh
+         hues, deliberately not reused from --cat-* above: Quick Links
+         categories are a different taxonomy from Bookmarks categories, so
+         giving them their own identity avoids implying a false 1:1
+         mapping between the two features. */
+      --qlcat-ablution:    #3F7A6E;
+      --qlcat-finance:     #4F9B72;
+      --qlcat-team:        #5C7FA6;
+      --qlcat-production:  #B5652F;
+      --qlcat-tools:       #7D6FA8;
+      --qlcat-marketing:   #C9587A;
+      --qlcat-uncat:       #8A8478;
 
       /* Sticky anchor-nav bar height — used for scroll-margin-top on each
          jump-linked section so anchored jumps clear the sticky bar. */
@@ -138,6 +162,11 @@
        works, unlike a tabs pattern that display:none-hides panels.
        Replaces the old top masthead banner (moved to the footer).
     ============================================== */
+    /* Solid black bar (2026-07-15 re-skin) — matches wireframes/nav-anchors-
+       2026-07-08.html .nav-bar exactly. Previously this bar used the page
+       background colour so it barely read as a bar at all against the
+       cream page; the wireframe's whole nav identity is a solid black
+       pill-bar, so this is a direct colour-value port, not a reinterpretation. */
     .dash-nav {
       position: sticky;
       top: 0;
@@ -146,9 +175,8 @@
       gap: 0.5rem;
       overflow-x: auto;
       align-items: center;
-      background: var(--bg-page);
+      background: var(--border-card);
       padding: 0.65rem 3rem;
-      border-bottom: 1px solid var(--divider);
       scrollbar-width: thin;
     }
 
@@ -157,9 +185,9 @@
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      background: var(--bg-card);
-      color: var(--text-secondary);
-      border: 2px solid var(--border-card);
+      background: transparent;
+      color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.28);
       border-radius: 999px;
       padding: 0.4rem 0.95rem;
       font-family: var(--font-sans);
@@ -172,16 +200,97 @@
     }
 
     .dash-nav-item:hover {
-      border-color: rgba(var(--accent-rgb), 0.5);
-      color: var(--accent);
+      border-color: rgba(255, 255, 255, 0.6);
     }
 
     /* .active is driven by scroll position (IntersectionObserver), not a
-       click-to-hide toggle — every section below is always in the DOM. */
+       click-to-hide toggle — every section below is always in the DOM.
+       Wireframe's active state is a solid white pill with black text, not
+       the functional accent green — nav active/inactive isn't a semantic
+       colour (unlike category/payable colours), so it's safe to match. */
     .dash-nav-item.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+      background: #fff;
+      border-color: #fff;
+      color: var(--border-card);
+    }
+
+    /* Quick Notes nav button (round 2, 2026-08-01) — same .dash-nav-item
+       pill chrome, just a <button> instead of an <a> (no #anchor to jump
+       to; it opens the popover below instead). cursor:pointer + font
+       reset needed since buttons don't inherit those the way anchors do. */
+    .dash-nav-notes {
+      cursor: pointer;
+      font: inherit;
+      position: relative;
+    }
+
+    /* Presence dot — shown/hidden by JS whenever a note currently has
+       content, so David knows at a glance without opening the popover. */
+    .notes-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #E0BB4A;   /* mustard/gold — distinct from every functional colour already in use */
+      border: 1.5px solid var(--border-card);
+      display: inline-block;
+    }
+
+    /* Round 3 (2026-08-01) — David's only complaint on this feature was
+       that it felt a little cramped for actual note-taking. Bumped width
+       320 -> 400 and textarea min-height 160 -> 240 (see .notes-textarea
+       below) — a deliberate, modest bump, not a full rework. */
+    .notes-popover {
+      position: fixed;
+      top: calc(var(--nav-height) + 10px);
+      right: 1.5rem;
+      z-index: 60;
+      width: min(400px, calc(100vw - 3rem));
+      background: var(--bg-card);
+      border: 2.5px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-hover);
+    }
+    .notes-popover[hidden] { display: none; }
+
+    .notes-popover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 2px solid var(--border-card);
+    }
+
+    .notes-popover-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .notes-popover-close {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      line-height: 1;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.1rem 0.3rem;
+    }
+    .notes-popover-close:hover { color: var(--danger); }
+
+    .notes-textarea {
+      display: block;
+      width: 100%;
+      min-height: 240px;
+      border: none;
+      resize: vertical;
+      padding: 0.85rem;
+      font-family: var(--font-legible);
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      background: transparent;
+      outline: none;
     }
 
     /* "Back to top" — small secondary pill next to each section title,
@@ -210,7 +319,7 @@
       border-color: rgba(var(--accent-rgb), 0.4);
     }
 
-    #sec-bookmarks, #sec-navlinks, #sec-actions, #sec-builds, #sec-portfolio {
+    #sec-bookmarks, #sec-inbox-links, #sec-builds, #sec-portfolio {
       scroll-margin-top: calc(var(--nav-height) + 14px);
     }
 
@@ -222,30 +331,45 @@
       padding: 2rem 3rem 5rem;
     }
 
-    /* Full-width links row: Bookmarks, My Navigation, Quick Notes side by side */
-    .links-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 2.5rem;
-      align-items: start;
-      margin-bottom: 2.5rem;
-    }
-
-    /* Two-column dashboard grid */
+    /* Two-column dashboard grid — v4 alignment fix (2026-08-14, Mia Chen,
+       David-approved): Inbox Links (left) + Project Builds (right) now
+       share a CSS Grid row via grid-template-areas, so both columns' first
+       cards start at the same vertical position regardless of header
+       height differences. Each column's header content and body
+       (first-card) content are split into their own grid items
+       (.il-header-block/.il-body-block on the left, .pb-header-block/
+       .pb-body-block on the right) placed into a shared header row + a
+       shared body row. Grid auto-sizes a row to its tallest cell, so no
+       hardcoded pixel value is needed anywhere — robust to header content
+       changing length later. Team Portfolio no longer lives in this row —
+       moved to a full-width band below it, see .team-grid below for its
+       full-width auto-fit column change. */
     .dashboard-columns {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2.5rem;
+      grid-template-areas:
+        "ilhead pbhead"
+        "ilbody pbbody";
+      column-gap: 2.5rem;
       align-items: start;
     }
 
+    /* .col-left/.col-right and the two <section> wrappers go
+       display:contents so their children can be placed directly as grid
+       items via grid-template-areas above, while keeping the
+       semantic/aria wrapper markup and existing descendant selectors
+       (e.g. `.col-left .il-row`) working unchanged. */
     .col-left,
     .col-right,
-    .col-links-a,
-    .col-links-b,
-    .col-links-c {
-      min-width: 0; /* prevent grid blowout */
+    .inboxlinks-section,
+    .builds-section {
+      display: contents;
     }
+
+    .il-header-block { grid-area: ilhead; min-width: 0; }
+    .il-body-block   { grid-area: ilbody; min-width: 0; }
+    .pb-header-block { grid-area: pbhead; min-width: 0; }
+    .pb-body-block   { grid-area: pbbody; min-width: 0; }
 
 
     /* =============================================
@@ -261,10 +385,12 @@
 
     .section-label {
       font-size: 0.76rem;
-      font-weight: 700;
+      font-weight: 800;               /* bumped 700->800, round 2 (2026-08-01) — wireframe's .section-label weight */
       letter-spacing: 0.28em;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--accent);           /* kept accent green, not recoloured black — this label IS the section's
+                                          functional colour anchor (matches .card-role, hover states, etc. that
+                                          also key off --accent); see round-2 build report for the full reasoning */
       white-space: nowrap;
     }
 
@@ -282,10 +408,47 @@
       margin-bottom: 3.5rem;
     }
 
+    /* Round 2 (2026-08-01) — 3-column layout: Pinned as its own always-
+       open column (David's steer: "column one"), + the real-category
+       accordion laid out in 2 CSS columns via `columns:` (a natural fit
+       for masonry-style variable-height cards — no manual JS bucketing
+       needed). Drops to 2 total visible columns (Pinned + 1 accordion
+       column) under ~1150px, a width chosen to comfortably cover a
+       Chromebook-class viewport per David's note — not pixel-verified
+       against his actual device, flagged as a judgment call in the
+       build report. Stacks fully to 1 column under 700px. */
+    .bm-layout {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(0, 2fr);
+      gap: 1.1rem;
+      align-items: start;
+    }
+
+    .bm-pinned-col { min-width: 0; }
+
+    .bm-visible-area {
+      column-count: 2;
+      column-gap: 1.1rem;
+      min-width: 0;
+    }
+
+    .bm-visible-area .bm-accordion-item {
+      break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+    }
+
+    @media (max-width: 1150px) {
+      .bm-visible-area { column-count: 1; }
+    }
+
+    @media (max-width: 700px) {
+      .bm-layout { grid-template-columns: 1fr; }
+    }
+
     /* Accordion item — shaped, green-tinted card, same treatment as .build-row */
     .bm-accordion-item {
       background: var(--bg-card);
-      border: 2px solid var(--border-card);
+      border: 2.5px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       margin-bottom: 0.5rem;
@@ -359,29 +522,132 @@
       max-height: 600px;
     }
 
-    /* Open-panel colour + legibility fix (2026-07-11) — scoped to Bookmarks
-       only (#bm-visible), not My Navigation, which shares these same .bm-*
-       classes but wasn't part of this ask. Each accordion item carries its
-       own --cat custom property (set inline, per category, in the JS render)
-       so one ruleset covers every category's own colour identity, tinted
-       lighter rather than filled solid. Falls back to --accent if --cat is
-       unset for any reason. */
-    #bm-visible .bm-accordion-item.open .bm-accordion-panel {
-      background: color-mix(in srgb, var(--cat, var(--accent)) 22%, #fff 78%);
+    /* Open-panel colour (2026-07-15 re-skin) — scoped to Bookmarks only
+       (#bm-visible / #bm-pinned; My Navigation shared these same .bm-*
+       classes but was dropped entirely round 2, 2026-08-01). Each
+       accordion item carries its own --cat custom property (set inline,
+       per category, in the JS render) so one ruleset covers every
+       category's own colour identity.
+
+       SUPERSEDES the 2026-07-11 "legibility fix," which traded the
+       wireframe's full solid fill for a 22%-tinted panel because dark text
+       on a light tint read as more legible than the alternative tried at
+       the time. Re-checked against wireframes/nav-anchors-2026-07-08.html
+       directly: the wireframe's own answer to that exact legibility
+       problem is bold WHITE text straight on the full saturated fill
+       (.bm-group[open] rules), not a lighter tint — so this restores the
+       full solid fill (header row included, not just the panel, matching
+       the wireframe's whole-card treatment) and keeps the legible font
+       stack from the 07-11 fix, just recoloured to bold white. */
+    #bm-visible .bm-accordion-item.open,
+    #bm-pinned .bm-accordion-item {
+      background: var(--cat, var(--accent));
+      border-color: var(--border-card);
     }
-    #bm-visible .bm-accordion-item.open .bm-panel-inner {
-      border-top-color: rgba(var(--ink-rgb), 0.12);
+    #bm-visible .bm-accordion-item.open .bm-cat-toggle:hover,
+    #bm-pinned .bm-accordion-item .bm-cat-toggle:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    #bm-visible .bm-accordion-item.open .bm-category-label,
+    #bm-pinned .bm-accordion-item .bm-category-label {
+      color: #fff;
+    }
+    #bm-visible .bm-accordion-item.open .bm-chevron,
+    #bm-pinned .bm-accordion-item .bm-chevron {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    #bm-visible .bm-accordion-item.open .bm-accordion-panel,
+    #bm-pinned .bm-accordion-item .bm-accordion-panel {
+      background: transparent;
+    }
+    #bm-visible .bm-accordion-item.open .bm-panel-inner,
+    #bm-pinned .bm-accordion-item .bm-panel-inner {
+      border-top-color: rgba(255, 255, 255, 0.35);
+    }
+    #bm-visible .bm-accordion-item.open .bm-chip-link,
+    #bm-pinned .bm-accordion-item .bm-chip-link {
+      color: #fff;
+    }
+    #bm-visible .bm-accordion-item.open .bm-chip-ext,
+    #bm-pinned .bm-accordion-item .bm-chip-ext {
+      opacity: 0.8;
+    }
+    #bm-visible .bm-accordion-item.open .bm-chip:hover,
+    #bm-pinned .bm-accordion-item .bm-chip:hover {
+      background: rgba(255, 255, 255, 0.16);
     }
     /* Font change, not just a colour change — genuinely legible stack,
-       medium weight (not bold) rather than the default body-text weight. */
-    #bm-visible .bm-accordion-item.open .bm-chip-name {
+       medium weight (not bold) rather than the default body-text weight,
+       carried over unchanged from the 07-11 fix; only the colour (now
+       bold white per the wireframe) and weight (bumped to bold, matching
+       the wireframe's bold-white-on-saturated-fill treatment) changed. */
+    #bm-visible .bm-accordion-item.open .bm-chip-name,
+    #bm-pinned .bm-accordion-item .bm-chip-name {
       font-family: var(--font-legible);
-      font-weight: 500;
+      font-weight: 700;
       font-size: 0.95rem;
       letter-spacing: 0.005em;
+      color: #fff;
     }
-    #bm-visible .bm-accordion-item.open .bm-chip-note {
+    #bm-visible .bm-accordion-item.open .bm-chip-note,
+    #bm-pinned .bm-accordion-item .bm-chip-note {
       font-family: var(--font-legible);
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Round 3 fix (2026-08-01) — chip controls (edit/pin/move/delete) were
+       still using their resting-state colours (dark muted green / dark
+       rust at low opacity, tuned for the plain white .bm-panel-inner
+       background) even inside an open/pinned card, where the background
+       is now the saturated --cat fill. Dark icon on dark-ish fill read as
+       near-invisible on hover — David flagged this directly. Fix: swap to
+       white/near-white in this context, same treatment as the chip text
+       above. Pin's "already pinned" solid-accent state gets the same
+       override so a pinned star doesn't disappear into the pinned column's
+       own fill. */
+    #bm-visible .bm-accordion-item.open .bm-ctrl-edit,
+    #bm-pinned .bm-accordion-item .bm-ctrl-edit,
+    #bm-visible .bm-accordion-item.open .bm-ctrl-move,
+    #bm-pinned .bm-accordion-item .bm-ctrl-move,
+    #bm-visible .bm-accordion-item.open .bm-ctrl-pin,
+    #bm-pinned .bm-accordion-item .bm-ctrl-pin {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    #bm-visible .bm-accordion-item.open .bm-ctrl-edit:hover,
+    #bm-pinned .bm-accordion-item .bm-ctrl-edit:hover,
+    #bm-visible .bm-accordion-item.open .bm-ctrl-move:hover,
+    #bm-pinned .bm-accordion-item .bm-ctrl-move:hover,
+    #bm-visible .bm-accordion-item.open .bm-ctrl-pin:hover,
+    #bm-pinned .bm-accordion-item .bm-ctrl-pin:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+    #bm-visible .bm-accordion-item.open .bm-ctrl-pin.pinned,
+    #bm-pinned .bm-accordion-item .bm-ctrl-pin.pinned {
+      color: #fff;
+    }
+    #bm-visible .bm-accordion-item.open .bm-ctrl-delete,
+    #bm-pinned .bm-accordion-item .bm-ctrl-delete {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    #bm-visible .bm-accordion-item.open .bm-ctrl-delete:hover,
+    #bm-pinned .bm-accordion-item .bm-ctrl-delete:hover {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+
+    /* Pinned column's own header row (no toggle button — see renderPinned
+       in the Bookmarks script) — matches .bm-cat-toggle's padding/layout
+       so the header reads at the same rhythm as a real category. */
+    .bm-pinned-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.7rem 1rem;
+    }
+    .bm-pinned-panel {
+      max-height: 600px;
+      overflow-y: auto;
     }
 
     .bm-panel-inner {
@@ -620,7 +886,7 @@
       position: relative;
       z-index: 1;
       background: var(--bg-page);
-      border: 2px solid var(--border-card);
+      border: 2.5px solid var(--border-card);
       border-radius: 12px;
       padding: 2rem;
       width: min(460px, 100%);
@@ -724,229 +990,33 @@
 
 
     /* =============================================
-       NAV LINKS SECTION (personal navigation —
-       folders / Drive / OneDrive) — shares the
-       bm- accordion & row classes above; this block
-       is just the bits unique to it.
+       TEAM PORTFOLIO — CARD GRID
+       (the "no accordion" note above was stale — the SECTION collapses via
+       #team-toggle/#team-grid-wrap, individual cards themselves don't;
+       corrected 2026-08-14 per Mia Chen's v4 wireframe notes)
     ============================================== */
-    .navlinks-section {
-      margin-bottom: 3.5rem;
-    }
-
-    /* =============================================
-       QUICK NOTES — plain persistent scratchpad,
-       localStorage only (no external integration).
-       Green card chrome + ochre writing surface, same
-       pairing as the Bookmarks/Nav header-vs-panel tones.
-    ============================================== */
-    .quicknotes-section {
-      margin-bottom: 3.5rem;
-      height: 100%;
-    }
-
-    .qn-card {
-      background: var(--bg-card);
-      border: 2px solid var(--border-card);
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-card);
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .qn-textarea {
-      width: 100%;
-      min-height: 260px;
-      resize: vertical;
-      background: var(--panel-bg);
-      border: 1px solid rgba(var(--panel-divider-rgb), 0.22);
-      border-radius: 8px;
-      padding: 0.75rem 0.9rem;
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      line-height: 1.55;
-      outline: none;
-      transition: border-color 0.15s ease;
-    }
-
-    .qn-textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    .qn-textarea:focus {
-      border-color: rgba(var(--accent-rgb), 0.5);
-    }
-
-    .qn-status {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      text-align: right;
-      min-height: 1em;
-    }
-
-
-    /* =============================================
-       TEAM ACTIONS — manual registry (Thomas-authored,
-       see team-actions-data.js), flat dismissible list.
-       Card chrome is a deliberate clone of .qn-card so
-       this column reads as one continuous panel with
-       Quick Notes above it.
-    ============================================== */
-    .ta-card {
-      background: var(--bg-card);
-      border: 2px solid var(--border-card);
-      border-radius: var(--radius-card);
-      box-shadow: var(--shadow-card);
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .ta-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .ta-row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.6rem;
-      background: var(--panel-bg);
-      border: 1px solid rgba(var(--panel-divider-rgb), 0.22);
-      border-radius: 8px;
-      padding: 0.6rem 0.7rem;
-    }
-
-    .ta-row-main {
-      display: flex;
-      flex-direction: column;
-      gap: 0.18rem;
-      min-width: 0;
-    }
-
-    .ta-row-text {
-      font-size: 0.88rem;
-      color: var(--text-primary);
-      line-height: 1.45;
-    }
-
-    .ta-row-source {
-      font-size: 0.7rem;
-      font-style: italic;
-      color: var(--text-muted);
-    }
-
-    /* Linked source tags get their own pill chrome (same tint/border
-       pattern as .card-more) so it's obvious at rest — not just on
-       hover — which source tags are clickable vs plain text. */
-    a.ta-row-source {
-      display: inline-flex;
-      align-items: center;
-      font-style: normal;
-      text-decoration: none;
-      cursor: pointer;
-      color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.1);
-      border: 1px solid rgba(var(--accent-rgb), 0.28);
-      border-radius: 4px;
-      padding: 0.04rem 0.4rem;
-    }
-    a.ta-row-source:hover {
-      background: rgba(var(--accent-rgb), 0.18);
-      border-color: rgba(var(--accent-rgb), 0.5);
-    }
-
-    .ta-dismiss {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.65rem;
-      color: rgba(var(--danger-rgb), 0.45);
-      padding: 0.2rem 0.3rem;
-      border-radius: 3px;
-      line-height: 1;
-      flex-shrink: 0;
-      transition: background 0.12s, color 0.12s;
-    }
-    .ta-dismiss:hover {
-      background: rgba(var(--danger-rgb), 0.12);
-      color: var(--danger);
-    }
-
-    .ta-empty {
-      font-size: 0.84rem;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    /* Payable variant — left accent stripe + amber tint distinguish a
-       money-owed row from a regular action row at a glance, without
-       reusing --danger (that reads as "something's wrong", not "you
-       owe this"). Badge/amount/due-date chrome all key off the same
-       --payable token so it reads as one consistent treatment. */
-    .ta-row--payable {
-      border-left: 3px solid var(--payable);
-      background: rgba(var(--payable-rgb), 0.16);
-    }
-
-    .ta-payable-badge {
-      display: inline-flex;
-      align-items: center;
-      align-self: flex-start;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--payable-text);
-      background: rgba(var(--payable-rgb), 0.24);
-      border: 1px solid rgba(var(--payable-rgb), 0.45);
-      border-radius: 4px;
-      padding: 0.14em 0.5em;
-      margin-bottom: 0.15rem;
-    }
-
-    .ta-row-payable-info {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.2rem 0.5rem;
-    }
-
-    .ta-row-payable-amount {
-      font-weight: 700;
-      color: var(--payable-text);
-    }
-
-    .ta-row-payable-sep {
-      color: var(--text-muted);
-      opacity: 0.6;
-    }
-
-
-    /* =============================================
-       TEAM PORTFOLIO — CARD GRID (no accordion)
-    ============================================== */
+    /* v4 (2026-08-14): moved to a full-width band at the bottom of the
+       page (was the right half of .dashboard-columns). Rather than
+       stretching the existing 2-column grid to fill the full width — which
+       would roughly double each card's width to ~650px+, producing very
+       long text lines and a sparse-looking card at that size — the card
+       itself stays pinned near its original ~300-330px tuned width and the
+       freed width buys MORE COLUMNS instead, via auto-fit. No extra
+       breakpoints needed: the grid naturally steps from ~3-4 columns on a
+       wide desktop down to 1 on mobile as the container narrows. */
     .team-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
     }
 
     .team-card {
+      position: relative;
+      overflow: hidden;
       background: var(--bg-card);
-      border: 2px solid var(--border-card);
+      border: 2.5px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
-      overflow: hidden;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -956,18 +1026,25 @@
     }
 
     /* — Card header (non-interactive, plain div) — */
+    /* Padding bumped 0.9rem -> 1.1rem (2026-08-12, Mia Chen) alongside the
+       avatar-size increase below — David flagged the team photos as too
+       small to make out faces. Slightly taller row gives the bigger
+       avatar breathing room instead of feeling cramped against the
+       card's top/bottom edges. */
     .card-accordion-header {
       display: flex;
       align-items: center;
-      padding: 0.9rem 1.25rem;
+      padding: 1.1rem 1.25rem;
       gap: 1rem;
     }
 
     /* — Identity row — */
+    /* Gap bumped 0.9rem -> 1.1rem in step with the larger avatar, so the
+       name/role text doesn't feel like it's crowding the photo. */
     .card-identity {
       display: flex;
       align-items: center;
-      gap: 0.9rem;
+      gap: 1.1rem;
       flex: 1;
     }
 
@@ -979,18 +1056,26 @@
       flex-shrink: 0;
     }
 
+    /* Avatar size bumped 80px -> 116px (2026-08-12, Mia Chen, live fix per
+       David: "I can't see your faces"). ~45% larger — chosen so the photo
+       reads clearly at a glance without dominating the row or forcing the
+       2-column .team-grid into overflow; border/initials-fallback font
+       scaled up in step (3px->3.5px, 1.1rem->1.5rem) so the ring and
+       fallback initials stay proportionate to the bigger circle rather
+       than looking thin/small against it. See matching mobile bump in the
+       600px breakpoint below. */
     .card-avatar {
-      width: 80px;
-      height: 80px;
+      width: 116px;
+      height: 116px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
+      font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       color: rgba(255, 255, 255, 0.92);
-      border: 3px solid rgba(255, 255, 255, 0.28);
+      border: 3.5px solid rgba(255, 255, 255, 0.28);
       text-transform: uppercase;
       background-size: cover;
       background-position: center top;
@@ -1126,13 +1211,6 @@
       color: var(--text-secondary);
     }
 
-    .footer-sub {
-      margin-top: 0.2rem;
-      font-size: 0.78rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
     .footer-copy {
       margin-top: 0.65rem;
       font-size: 0.72rem;
@@ -1140,6 +1218,232 @@
       text-transform: uppercase;
       opacity: 0.75;
     }
+
+
+    /* =============================================
+       INBOX LINKS — new 2026-08-14 (Mia Chen), ported from
+       wireframes\inbox-links-wireframe-2026-08-14-v4.html, David-approved.
+       Feed of recent Team Inbox / Owners Inbox drops with mark-as-read/
+       archive. Sits in the left half of .dashboard-columns.
+    ============================================== */
+    .inboxlinks-section { margin-bottom: 0; }
+
+    .il-count-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.3);
+      border-radius: 999px;
+      padding: 0.18em 0.7em;
+    }
+
+    .il-ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: none;
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.2rem 0.75rem;
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .il-ghost-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .il-subcopy {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.1rem;
+      max-width: 68ch;
+    }
+
+    /* ---------- filter chips (two groups: source, then project) ---------- */
+    .il-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .il-filter-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .il-filter-sep {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 0 0.15rem;
+      user-select: none;
+    }
+    .il-filter-chip {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: var(--bg-card);
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.3rem 0.9rem;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .il-filter-chip.active { background: var(--border-card); color: #fff; }
+    .il-filter-chip:not(.active):hover { background: var(--bg-card-hover); }
+
+    .il-filter-chip--project { border-style: dashed; }
+    .il-filter-chip--project.active { background: var(--accent); border-color: var(--accent); border-style: solid; }
+
+    .il-filter-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 1.1rem;
+    }
+
+    /* ---------- rows ---------- */
+    .il-list { display: flex; flex-direction: column; gap: 0.65rem; }
+
+    .il-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      background: var(--bg-card);
+      border: 2.5px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.85rem 1.1rem;
+      transition: box-shadow 0.16s ease, transform 0.16s ease, opacity 0.25s ease;
+    }
+    .il-row:hover { box-shadow: var(--shadow-hover); transform: translate(-1px, -1px); }
+    .il-row.il-leaving { opacity: 0; transform: scale(0.98); }
+
+    .il-info { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+    .il-badges { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+
+    .il-source-badge {
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.2em 0.6em;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .il-source-badge.src-team { background: var(--accent); color: #fff; }
+    .il-source-badge.src-owners { background: var(--build-hold); color: #fff; }
+
+    .il-ext-chip {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--bg-card-hover);
+      border: 1.5px solid var(--border-card);
+      border-radius: 4px;
+      padding: 0.15em 0.5em;
+      color: var(--text-secondary);
+    }
+
+    /* project tag — deliberately distinct shape (dashed, no fill) so it
+       reads as a cross-cutting label, not another "source of truth" badge */
+    .il-project-tag {
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: none;
+      border: 1.5px dashed rgba(var(--accent-rgb), 0.6);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 0.15em 0.65em;
+      white-space: nowrap;
+    }
+
+    a.il-filename {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      word-break: break-word;
+      text-decoration: none;
+      width: fit-content;
+    }
+    a.il-filename:hover, a.il-filename:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    span.il-filename {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      word-break: break-word;
+      width: fit-content;
+    }
+
+    .il-context { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
+    .il-meta { font-size: 0.72rem; color: var(--text-muted); }
+
+    .il-mark-read {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: none;
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+    }
+    .il-mark-read:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .il-archive-toggle-bar { margin-top: 1.25rem; }
+    .il-archive-toggle-btn {
+      background: none; border: none;
+      font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700;
+      color: var(--text-secondary); cursor: pointer; padding: 0.35rem 0;
+    }
+    .il-archive-toggle-btn:hover { color: var(--accent); }
+
+    .il-archive-area { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .il-archive-area[hidden] { display: none; }
+
+    .il-row.il-archived { box-shadow: none; border-style: dashed; opacity: 0.62; }
+    .il-row.il-archived .il-filename, .il-row.il-archived .il-context { color: var(--text-muted); }
+    .il-row.il-archived .il-source-badge { filter: grayscale(0.4); opacity: 0.85; }
+
+    .il-restore {
+      flex-shrink: 0; background: none; border: none;
+      font-family: var(--font-sans); font-size: 0.76rem; font-weight: 700;
+      color: var(--accent); cursor: pointer; white-space: nowrap;
+    }
+    .il-restore:hover { text-decoration: underline; }
+
+    .il-empty {
+      font-size: 0.85rem; color: var(--text-muted); font-style: italic;
+      padding: 1.5rem 0; text-align: center;
+    }
+
+    /* Inside the half-width column, a row's filename + button can get snug
+       on narrower viewports. min-width:0 (already on .il-info) plus this
+       wrap allowance is a light safety net so a long filename never forces
+       the mark-read button off the card. */
+    .col-left .il-row { flex-wrap: wrap; }
+    .col-left .il-mark-read { margin-left: auto; }
 
 
     /* =============================================
@@ -1161,7 +1465,7 @@
       justify-content: space-between;
       gap: 1.25rem;
       background: var(--bg-card);
-      border: 2px solid var(--border-card);
+      border: 2.5px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
       padding: 0.85rem 1.25rem;
@@ -1179,6 +1483,22 @@
       font-weight: 700;
       color: var(--text-primary);
       line-height: 1.25;
+    }
+
+    /* Build name as a live link (2026-08-01 links-hub build-out) — only
+       applied when a build actually has a `link`; builds with none (e.g.
+       on hold) keep the plain non-interactive .build-name span above. */
+    a.build-name.build-name-link {
+      display: inline-block;
+      text-decoration: none;
+      transition: color 0.14s ease;
+      width: fit-content;
+    }
+    a.build-name.build-name-link:hover,
+    a.build-name.build-name-link:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
 
     .build-desc {
@@ -1247,10 +1567,13 @@
 
 
     /* =============================================
-       QUICK LINKS — ~1" square tiles between Bookmarks
-       and Actions For Me. Supersedes the earlier
-       "completed Project Build links" concept (2026-07-09
-       David's note) — broader now (see 2026-07-11 brief).
+       QUICK LINKS — equal-size square tiles sitting between the
+       Bookmarks section and the Project Builds hub below. Supersedes the
+       earlier "completed Project Build links" concept (2026-07-09
+       David's note) — broader now (see 2026-07-11 brief). Distinct from
+       the Project Builds links hub itself (below): Quick Links is a flat
+       mixed bag of frequently-used destinations, Project Builds is
+       specifically the live build registry with status badges.
     ============================================== */
     .quicklinks-section {
       margin-bottom: 2.5rem;
@@ -1263,19 +1586,176 @@
       gap: 1rem;
     }
 
+    /* Wrapper holds the tile + its hover-reveal edit/delete controls —
+       the tile itself stays a plain <a> (so click-through still just
+       works), controls float in the corner via the wrapper. */
+    .ql-tile-wrap {
+      position: relative;
+      width: 108px;
+    }
+
+    .ql-tile-controls {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      display: flex;
+      gap: 0.2rem;
+      opacity: 0;
+      transition: opacity 0.14s ease;
+      z-index: 2;
+    }
+    .ql-tile-wrap:hover .ql-tile-controls { opacity: 1; }
+
+    .ql-ctrl-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1.5px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .ql-ctrl-edit { color: rgba(var(--accent-rgb), 0.75); }
+    .ql-ctrl-edit:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ql-ctrl-delete { color: rgba(var(--danger-rgb), 0.75); }
+    .ql-ctrl-delete:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+
+    /* =============================================
+       QUICK LINKS — GROUPED CATEGORY ACCORDION (added 2026-08-12,
+       Mia Chen). Replaces the old flat .quicklinks-row with a set of
+       collapsible category cards — same visual/interaction language as
+       the Bookmarks accordion (.bm-accordion-item et al above: hard-shadow
+       card, chevron rotate, colour-fills-on-open) rather than a new one,
+       and the SAME exclusive-open-one-at-a-time JS pattern #bm-visible
+       already uses (see the QUICK LINKS script block for openCat).
+       Ported from the validated mockup at
+       Project Build\PKA Dashboard\_mockups\quicklinks_grouped_mockup_2026-08-12.html
+       — David reviewed and signed off on that file before this went live.
+    ============================================== */
+    .ql-cat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .ql-cat-item {
+      background: var(--bg-card);
+      border: 2.5px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+    .ql-cat-item.open { box-shadow: var(--shadow-hover); }
+
+    .ql-cat-item.open .ql-cat-header { background: var(--cat, var(--accent)); }
+    .ql-cat-item.open .ql-cat-label,
+    .ql-cat-item.open .ql-cat-count { color: #fff; }
+    .ql-cat-item.open .ql-cat-chevron { color: rgba(255, 255, 255, 0.85); transform: rotate(90deg); }
+    .ql-cat-item.open .ql-cat-toggle:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .ql-cat-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.85rem 1.1rem;
+      text-align: left;
+      font-family: var(--font-sans);
+      transition: background 0.14s;
+    }
+    .ql-cat-toggle:hover { background: rgba(var(--accent-rgb), 0.06); }
+
+    .ql-cat-chevron {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: transform 0.25s ease, color 0.2s ease;
+      display: inline-block;
+    }
+
+    .ql-cat-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    .ql-cat-count {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(var(--ink-rgb), 0.06);
+      border-radius: 999px;
+      padding: 0.1rem 0.55rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .ql-cat-item.open .ql-cat-count { background: rgba(255, 255, 255, 0.2); }
+
+    /* Panel height is set inline via JS (measured scrollHeight), not a
+       fixed max-height guess — deliberate, so a category holding many
+       more tiles later (David's own "there will likely be additions along
+       the way") never gets clipped, however many rows it wraps to. */
+    .ql-cat-panel {
+      max-height: 0;
+      overflow: hidden;
+      background: var(--panel-bg);
+      transition: max-height 0.3s ease;
+    }
+
+    .ql-cat-panel-inner {
+      padding: 0.3rem 1.1rem 1.15rem;
+      border-top: 1px solid rgba(var(--panel-divider-rgb), 0.2);
+    }
+
+    .ql-tiles-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding-top: 0.85rem;
+    }
+
+    /* Equal-size square tiles (David's ask, round 2) — fixed width AND
+       height (was width-only, auto height, so a longer label made a
+       taller tile than a short one). .ql-label clamps to 2 lines so tile
+       height stays true-square regardless of name length. */
+    /* Round 3 (2026-08-01) — per-tile background colour, David's ask,
+       "as in the wireframe (Actions for me)". --ql-fill is set inline per
+       tile by tileHtml() below (hashed off the tile's stable id, so a
+       given tile keeps its colour across reloads/re-renders instead of
+       reshuffling). Falls back to the old plain --bg-card so the dashed
+       "+ Add Link" tile (which never gets --ql-fill set) stays neutral. */
     .ql-tile {
-      width: 96px;
+      width: 108px;
+      height: 108px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.4rem;
+      position: relative;
+      overflow: hidden;
       text-decoration: none;
-      background: var(--bg-card);
-      border: 2px solid var(--border-card);
+      background: var(--ql-fill, var(--bg-card));
+      border: 2.5px solid var(--border-card);
       border-radius: var(--radius-card);
       box-shadow: var(--shadow-card);
-      padding: 0.7rem 0.5rem;
+      padding: 0.6rem 0.5rem;
       transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.14s ease;
     }
 
@@ -1285,43 +1765,114 @@
       transform: translateY(-2px);
     }
 
+    /* Add-tile — same square footprint, dashed border, no shape/controls. */
+    .ql-tile-add {
+      background: var(--bg-page);
+      border-style: dashed;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .ql-tile-add:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: var(--shadow-hover);
+    }
+
+    /* Custom icon badge (round 2) — solid black circle + glyph, replacing
+       the old 2-letter-initial coloured swatch. Matches the wireframe's
+       own .a-icon language (black circle, white glyph) closely — David
+       types any emoji or short text into the icon field per tile. */
     .ql-badge {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      color: rgba(255, 255, 255, 0.92);
+      font-size: 1.05rem;
+      line-height: 1;
+      background: var(--border-card);
+      color: #fff;
+      border: 2px solid var(--border-card);
       flex-shrink: 0;
     }
 
-    .ql-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-align: center;
-      line-height: 1.25;
+    .ql-badge-add {
+      background: var(--bg-page);
+      color: var(--border-card);
+      border: 2px dashed var(--border-card);
+      font-size: 1.2rem;
+      font-weight: 800;
     }
 
-    /* Shared container for the Owner's Inbox / Team Inbox pair — David
-       asked for a visual grouping since they're a related pair. Dashed
-       accent border + tinted background reads as "one grouped unit"
-       without introducing new card chrome. */
-    .ql-pair {
-      display: flex;
-      gap: 0.6rem;
-      padding: 0.5rem;
-      border: 1px dashed rgba(var(--accent-rgb), 0.35);
-      border-radius: calc(var(--radius-card) + 4px);
-      background: var(--accent-dim);
+    /* Round 3: bumped 600 -> 800 and reads --ql-ink (the darker text-safe
+       partner tone for whichever --ql-fill this tile got) so the label
+       holds contrast against a coloured tile instead of the old
+       plain-on-neutral treatment. Falls back to --text-secondary on the
+       "+ Add Link" tile, which never gets --ql-ink set. */
+    .ql-label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--ql-ink, var(--text-secondary));
+      text-align: center;
+      line-height: 1.22;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    .ql-pair .ql-tile {
-      background: var(--bg-page);
-      box-shadow: none;
+
+
+    /* =============================================
+       GEOMETRIC ACCENT SHAPES — round 2 (2026-08-01), ported from the
+       wireframe's .a-shape corner-bleed motif. Reusable utility, applied
+       sparingly (per the brief's own "without becoming visual noise"
+       caution) to Team Portfolio cards and Quick Link tiles only — build
+       rows were deliberately left plain (see round-2 build report): a
+       shape bleeding off a slim horizontal row read as clutter next to
+       the badge, not a nice accent, when tried during this pass.
+       Host element needs position:relative + overflow:hidden (already
+       set on .team-card, .ql-tile). Cycles circle/ring/triangle/star via
+       nth-of-type so no extra markup or JS is needed to vary the shape. */
+    .corner-shape {
+      position: absolute;
+      top: -16px;
+      right: -16px;
+      width: 60px;
+      height: 60px;
+      opacity: 0.14;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .corner-shape.shape-circle { border-radius: 50%; background: rgba(17,17,17,1); }
+    .corner-shape.shape-ring {
+      border-radius: 50%;
+      border: 8px solid rgba(17,17,17,1);
+      background: none;
+      opacity: 0.12;
+    }
+    .corner-shape.shape-triangle {
+      width: 0; height: 0; background: none; opacity: 0.16;
+      border-left: 30px solid transparent;
+      border-right: 30px solid transparent;
+      border-bottom: 52px solid rgba(17,17,17,1);
+      top: -10px; right: -4px;
+    }
+    .corner-shape.shape-star {
+      background-color: rgba(17,17,17,1);
+      opacity: 0.14;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%,
+                          21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    }
+    /* Everything else inside a shaped host must sit above the shape —
+       :not(.corner-shape) matters here: without it this would win the
+       cascade over .corner-shape's own position:absolute (same
+       specificity, later in source) and flatten the shape into normal
+       flow instead of letting it bleed off the corner. */
+    .team-card > *:not(.corner-shape),
+    .ql-tile > *:not(.corner-shape) {
+      position: relative;
+      z-index: 1;
     }
 
 
@@ -1337,13 +1888,11 @@
       }
       .dashboard-columns {
         grid-template-columns: 1fr;
-      }
-      .links-row {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
-      .team-grid {
-        grid-template-columns: 1fr;
+        grid-template-areas:
+          "ilhead"
+          "ilbody"
+          "pbhead"
+          "pbbody";
       }
     }
 
@@ -1351,27 +1900,51 @@
       .page-body {
         padding: 1.5rem 1rem 4rem;
       }
+      /* Mobile avatar bumped in step with the desktop increase above
+         (2026-08-12) — kept proportionately smaller than the 116px desktop
+         size since narrow viewports have less room either way, but still a
+         clear jump from the old 64px so faces read on a phone too. */
       .card-avatar {
-        width: 64px;
-        height: 64px;
+        width: 88px;
+        height: 88px;
+        font-size: 1.15rem;
       }
       .dash-nav {
         padding: 0.55rem 1rem;
       }
-      .quicklinks-row {
+      .quicklinks-row,
+      .ql-tiles-row {
         gap: 0.75rem;
       }
+      .ql-cat-toggle {
+        padding: 0.7rem 0.85rem;
+      }
+      .ql-cat-panel-inner {
+        padding: 0.3rem 0.85rem 0.9rem;
+      }
+      .ql-tile-wrap {
+        width: 80px;
+      }
       .ql-tile {
-        width: 76px;
-        padding: 0.55rem 0.35rem;
+        width: 80px;
+        height: 80px;
+        padding: 0.5rem 0.35rem;
       }
       .ql-badge {
-        width: 32px;
-        height: 32px;
-        font-size: 0.62rem;
+        width: 30px;
+        height: 30px;
+        font-size: 0.85rem;
       }
       .ql-label {
-        font-size: 0.64rem;
+        font-size: 0.62rem;
+      }
+      .il-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .il-mark-read,
+      .il-restore {
+        align-self: flex-start;
       }
     }
 
@@ -1385,11 +1958,27 @@
   ============================================== -->
   <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
     <a class="dash-nav-item" href="#sec-bookmarks">Bookmarks</a>
-    <a class="dash-nav-item" href="#sec-navlinks">My Navigation</a>
-    <a class="dash-nav-item" href="#sec-actions">Actions For Me</a>
-    <a class="dash-nav-item" href="#sec-builds">Current Builds</a>
+    <a class="dash-nav-item" href="#sec-inbox-links">Inbox Links</a>
+    <a class="dash-nav-item" href="#sec-builds">Project Builds</a>
     <a class="dash-nav-item" href="#sec-portfolio">Portfolio</a>
+    <!-- Quick Notes (round 2, 2026-08-01) — relocated from an
+         always-visible widget (dropped round 1) to a compact nav-bar
+         popover. .notes-dot is shown/hidden by JS whenever a note
+         currently exists, so David knows at a glance without opening it. -->
+    <button class="dash-nav-item dash-nav-notes" id="notes-nav-btn" type="button" aria-haspopup="true" aria-expanded="false">
+      <span aria-hidden="true">&#128221;</span> Notes
+      <span class="notes-dot" id="notes-dot" hidden aria-hidden="true"></span>
+    </button>
   </nav>
+
+  <!-- QUICK NOTES POPOVER -->
+  <div class="notes-popover" id="notes-popover" hidden>
+    <div class="notes-popover-header">
+      <span class="notes-popover-title">Quick Notes</span>
+      <button class="notes-popover-close" id="notes-close" aria-label="Close notes">&times;</button>
+    </div>
+    <textarea id="notes-textarea" class="notes-textarea" placeholder="Jot something down&hellip;"></textarea>
+  </div>
 
 
   <!-- =============================================
@@ -1398,94 +1987,53 @@
   <main class="page-body">
 
     <!-- ========================================
-         FULL-WIDTH ROW: Bookmarks + My Navigation + Quick Notes, side by side
+         BOOKMARKS — full width now that My Navigation (dropped round 2,
+         2026-08-01: redundant with Quick Links) no longer shares the row.
+         Pinned (own always-open column) + a 2-column accordion for every
+         other category, see .bm-layout / #bm-pinned / #bm-visible below.
     ========================================= -->
-    <div class="links-row">
+    <section class="bookmarks-section" id="sec-bookmarks" aria-label="Bookmarks">
 
-      <!-- WEBSITE BOOKMARKS -->
-      <div class="col-links-a">
-        <section class="bookmarks-section" id="sec-bookmarks" aria-label="Bookmarks">
+      <div class="section-header">
+        <span class="section-label">Bookmarks</span>
+        <div class="section-rule"></div>
+        <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+      </div>
 
-          <div class="section-header">
-            <span class="section-label">Bookmarks</span>
-            <div class="section-rule"></div>
-            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
-          </div>
+      <div class="bm-layout">
+        <!-- Pinned — own column, always open, rendered by JS -->
+        <div id="bm-pinned" class="bm-pinned-col"></div>
 
-          <!-- Accordion rendered by JS -->
-          <div id="bm-visible" class="bm-visible-area"></div>
+        <!-- Category accordions — 2 CSS columns (1 on narrower/Chromebook
+             widths), rendered by JS -->
+        <div id="bm-visible" class="bm-visible-area"></div>
+      </div>
 
-          <!-- Behind-the-scenes toggle -->
-          <div class="bm-toggle-bar">
-            <button class="bm-toggle-btn" id="bm-toggle" aria-expanded="false">
-              &#9662; Behind the scenes
-            </button>
-          </div>
+      <!-- Behind-the-scenes toggle -->
+      <div class="bm-toggle-bar">
+        <button class="bm-toggle-btn" id="bm-toggle" aria-expanded="false">
+          &#9662; Behind the scenes
+        </button>
+      </div>
 
-          <!-- Hidden bookmarks: rendered by JS -->
-          <div id="bm-hidden" class="bm-hidden-area" hidden aria-hidden="true"></div>
+      <!-- Hidden bookmarks: rendered by JS -->
+      <div id="bm-hidden" class="bm-hidden-area" hidden aria-hidden="true"></div>
 
-        </section>
-      </div><!-- /col-links-a -->
-
-      <!-- MY NAVIGATION (personal folders / Drive / OneDrive links) -->
-      <div class="col-links-b">
-        <section class="navlinks-section" id="sec-navlinks" aria-label="My Navigation">
-
-          <div class="section-header">
-            <span class="section-label">My Navigation</span>
-            <div class="section-rule"></div>
-            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
-          </div>
-
-          <!-- Accordion rendered by JS -->
-          <div id="nl-visible" class="bm-visible-area"></div>
-
-        </section>
-      </div><!-- /col-links-b -->
-
-      <!-- QUICK NOTES (plain persistent scratchpad, localStorage only —
-           no external integration/credentials, unlike a live Todoist feed) -->
-      <div class="col-links-c">
-        <section class="quicknotes-section" aria-label="Quick Notes">
-
-          <div class="section-header">
-            <span class="section-label">Quick Notes</span>
-            <div class="section-rule"></div>
-          </div>
-
-          <div class="qn-card">
-            <textarea id="qn-textarea" class="qn-textarea" placeholder="Jot anything down — saved automatically."></textarea>
-            <div class="qn-status" id="qn-status">&nbsp;</div>
-          </div>
-
-        </section>
-
-        <!-- TEAM ACTIONS ("Actions for me") — manual registry, entries
-             authored by Thomas directly in team-actions-data.js. No
-             urgency-grouping chrome, flat list, muted source tag per row. -->
-        <section class="team-actions-section" id="sec-actions" aria-label="Actions for me">
-
-          <div class="section-header">
-            <span class="section-label">Actions For Me</span>
-            <div class="section-rule"></div>
-            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
-          </div>
-
-          <div class="ta-card">
-            <div id="ta-list" class="ta-list"></div>
-          </div>
-
-        </section>
-      </div><!-- /col-links-c -->
-
-    </div><!-- /links-row -->
+    </section>
 
 
     <!-- ========================================
-         QUICK LINKS — 1" square tiles between Bookmarks and
-         Actions For Me. Supersedes the earlier "completed Project
-         Build links" idea (2026-07-09 David's note) — broader now.
+         QUICK LINKS — grouped category accordion (round 3, 2026-08-12,
+         Mia Chen — supersedes the round-2 flat tile row). Categorized,
+         collapsible, exclusive-open-one-at-a-time (same interaction
+         language/pattern as the Bookmarks accordion above). Built from a
+         mockup David reviewed and signed off on — see
+         Project Build\PKA Dashboard\_mockups\quicklinks_grouped_mockup_2026-08-12.html.
+         Full add/edit/delete + localStorage persistence carried over
+         unchanged from round 2; see the QUICK LINKS script block for the
+         seed data, category definitions, and the one-time migration that
+         upgrades any pre-existing flat (uncategorized) localStorage data
+         on load.
     ========================================= -->
     <section class="quicklinks-section" aria-label="Quick Links">
 
@@ -1494,39 +2042,65 @@
         <div class="section-rule"></div>
       </div>
 
-      <div class="quicklinks-row">
-        <!-- Master Sales Tracker tile stripped for public mirror -- real Sheet ID, Finance data -->
-        <a class="ql-tile" href="https://netherleys.github.io/book-production-hub/" target="_blank" rel="noopener noreferrer" title="Book Production Hub">
-          <span class="ql-badge" style="background:var(--av-mia)">BH</span>
-          <span class="ql-label">Book Production Hub</span>
-        </a>
-        <a class="ql-tile" href="../Image%20Resize/index.html" target="_blank" rel="noopener noreferrer" title="Image Resize Tool">
-          <span class="ql-badge" style="background:var(--av-marcus)">IR</span>
-          <span class="ql-label">Image Resize Tool</span>
-        </a>
-        <!-- Owner's Inbox + Team Inbox — grouped per David's steer, they're a related pair -->
-        <!-- Owner's Inbox / Team Inbox tiles stripped for public mirror -- winexplorer:// local paths + Windows username, also non-functional off this PC -->
-      </div>
+      <div class="ql-cat-list" id="ql-cat-list"></div>
     </section>
 
 
     <div class="dashboard-columns">
 
       <!-- ========================================
-           LEFT COLUMN: Project Builds
+           LEFT COLUMN: Inbox Links — new 2026-08-14 (Mia Chen), ported
+           from wireframes\inbox-links-wireframe-2026-08-14-v4.html,
+           David-approved. Header content and body content are split into
+           .il-header-block/.il-body-block so they can be placed as
+           separate grid items (see .dashboard-columns CSS) — this is what
+           keeps this column's first card aligned with Project Builds'
+           first card on the right, regardless of header height.
       ========================================= -->
       <div class="col-left">
 
-        <!-- PROJECT BUILDS -->
-        <section class="builds-section" id="sec-builds" aria-label="Current Project Builds">
+        <section class="inboxlinks-section" id="sec-inbox-links" aria-label="Inbox Links">
 
-          <div class="section-header">
-            <span class="section-label">Current Builds</span>
-            <div class="section-rule"></div>
-            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+          <div class="il-header-block">
+            <div class="section-header">
+              <span class="section-label">Inbox Links</span>
+              <span class="il-count-pill" id="il-count-pill">0 new</span>
+              <div class="section-rule"></div>
+              <button class="il-ghost-btn" id="il-mark-all" type="button">&#10003; Mark all as read</button>
+            </div>
+
+            <p class="il-subcopy">
+              Recent drops from Team Inbox and Owners Inbox &mdash; a glance, not a to-do list. Mark items as read to
+              archive them once you&rsquo;ve seen them.
+            </p>
+
+            <div class="il-filter-bar" id="il-filter-bar">
+              <div class="il-filter-group" data-group="source">
+                <button class="il-filter-chip active" data-filter="all" type="button">All</button>
+                <button class="il-filter-chip" data-filter="Team Inbox" type="button">Team Inbox</button>
+                <button class="il-filter-chip" data-filter="Owners Inbox" type="button">Owners Inbox</button>
+              </div>
+              <span class="il-filter-sep" id="il-filter-sep" hidden>&mdash;</span>
+              <!-- Project chips are built dynamically in JS from whatever
+                   distinct projectTag values are actually present in the
+                   loaded data — not hardcoded, so a new project tag just
+                   shows up here with no markup change needed. -->
+              <div class="il-filter-group" id="il-project-filter-group" data-group="project"></div>
+            </div>
+            <p class="il-filter-hint">Source filters single-select; project chips are additive toggles on top.</p>
           </div>
 
-          <div class="builds-list" id="builds-list"></div>
+          <div class="il-body-block">
+            <div class="il-list" id="il-list"></div>
+            <div class="il-empty" id="il-empty" hidden>Nothing matches this filter.</div>
+
+            <div class="il-archive-toggle-bar">
+              <button class="il-archive-toggle-btn" id="il-archive-toggle" aria-expanded="false" type="button">
+                &#9662; Recently archived (<span id="il-archive-count">0</span>)
+              </button>
+            </div>
+            <div class="il-archive-area" id="il-archive-area" hidden aria-hidden="true"></div>
+          </div>
 
         </section>
 
@@ -1534,29 +2108,55 @@
 
 
       <!-- ========================================
-           RIGHT COLUMN: Team Portfolio
+           RIGHT COLUMN: Project Builds (moved from left, 2026-08-14)
       ========================================= -->
       <div class="col-right">
 
-        <section class="team-section" id="sec-portfolio" aria-label="Team Portfolio">
+        <section class="builds-section" id="sec-builds" aria-label="Project Builds">
 
-          <div class="section-header">
-            <span class="section-label">Team Portfolio</span>
-            <div class="section-rule"></div>
-            <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
-            <button class="bm-toggle-btn" id="team-toggle" aria-expanded="false">
-              &#9662; Show team
-            </button>
+          <div class="pb-header-block">
+            <div class="section-header">
+              <span class="section-label">Project Builds</span>
+              <div class="section-rule"></div>
+              <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+            </div>
           </div>
 
-          <div id="team-grid-wrap" hidden aria-hidden="true">
-            <div class="team-grid" id="team-grid"></div>
-          </div><!-- /team-grid-wrap -->
+          <div class="pb-body-block">
+            <div class="builds-list" id="builds-list"></div>
+          </div>
+
         </section>
 
       </div><!-- /col-right -->
 
     </div><!-- /dashboard-columns -->
+
+
+    <!-- ========================================
+         TEAM PORTFOLIO — moved to a full-width band at the bottom of the
+         page (2026-08-14, was the right column of .dashboard-columns
+         above). Still a collapsed-by-default accordion, same
+         #team-toggle/#team-grid-wrap toggle behaviour, just relocated —
+         see .team-grid CSS for the auto-fit column change that keeps
+         cards at their original tuned width at the new full page width.
+    ========================================= -->
+    <section class="team-section" id="sec-portfolio" aria-label="Team Portfolio">
+
+      <div class="section-header">
+        <span class="section-label">Team Portfolio</span>
+        <div class="section-rule"></div>
+        <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
+        <button class="bm-toggle-btn" id="team-toggle" aria-expanded="false">
+          &#9662; Show team
+        </button>
+      </div>
+
+      <div id="team-grid-wrap" hidden aria-hidden="true">
+        <div class="team-grid" id="team-grid"></div>
+      </div><!-- /team-grid-wrap -->
+    </section>
+
   </main><!-- /page-body -->
 
 
@@ -1565,9 +2165,8 @@
        text (dropped from the top, kept here per brief)
   ============================================== -->
   <footer class="page-footer">
-    <p class="footer-brand">PKA Dashboard</p>
-    <p class="footer-sub">Command Centre &mdash; Internal Operations</p>
-    <p class="footer-copy">PKA Management &mdash; Internal Use Only</p>
+    <p class="footer-brand">PKA Management Command Centre &mdash; Internal Operations</p>
+    <p class="footer-copy">Internal Use Only</p>
   </footer>
 
 
@@ -1638,47 +2237,54 @@
 
 
   <!-- =============================================
-       NAV LINK MODAL (personal folders / Drive / OneDrive)
+       QUICK LINK MODAL (round 2, 2026-08-01) — Add/Edit for the
+       now-data-driven Quick Links tiles.
   ============================================== -->
-  <div id="nl-modal" class="bm-modal" role="dialog" aria-modal="true"
-       aria-labelledby="nl-modal-title" hidden>
-    <div class="bm-modal-backdrop" id="nl-backdrop"></div>
+  <div id="ql-modal" class="bm-modal" role="dialog" aria-modal="true"
+       aria-labelledby="ql-modal-title" hidden>
+    <div class="bm-modal-backdrop" id="ql-backdrop"></div>
     <div class="bm-modal-box">
-      <h2 class="bm-modal-title" id="nl-modal-title">Add Nav Link</h2>
+      <h2 class="bm-modal-title" id="ql-modal-title">Add Quick Link</h2>
       <div class="bm-modal-fields">
         <label class="bm-field">
           <span class="bm-field-label">Name</span>
-          <input type="text" id="nl-f-name" class="bm-input" placeholder="Display name" autocomplete="off">
+          <input type="text" id="ql-f-name" class="bm-input" placeholder="Display name" autocomplete="off">
         </label>
         <label class="bm-field">
           <span class="bm-field-label">URL</span>
-          <input type="text" id="nl-f-url" class="bm-input" placeholder="file:///C:/... or a Drive/OneDrive folder link" autocomplete="off">
-        </label>
-        <label class="bm-field" id="nl-cat-field">
-          <span class="bm-field-label">Category</span>
-          <select id="nl-f-cat" class="bm-input"></select>
+          <input type="text" id="ql-f-url" class="bm-input" placeholder="https://... or a file:///, winexplorer:/// link" autocomplete="off">
         </label>
         <label class="bm-field">
-          <span class="bm-field-label">Note <em>(optional)</em></span>
-          <input type="text" id="nl-f-note" class="bm-input" placeholder="e.g. check before Friday" autocomplete="off">
+          <span class="bm-field-label">Icon <em>(emoji or 1&ndash;2 characters)</em></span>
+          <input type="text" id="ql-f-icon" class="bm-input" placeholder="e.g. &#128202; or MS" maxlength="4" autocomplete="off">
+        </label>
+        <!-- Category select (added 2026-08-12, grouped-categories build) —
+             options populated from CATEGORY_DEFS in the script block below,
+             not hardcoded here, so the two never drift out of sync. -->
+        <label class="bm-field">
+          <span class="bm-field-label">Category</span>
+          <select id="ql-f-category" class="bm-input"></select>
         </label>
       </div>
       <div class="bm-modal-btns">
-        <button class="bm-btn-save" id="nl-save">Save</button>
-        <button class="bm-btn-cancel" id="nl-cancel">Cancel</button>
+        <button class="bm-btn-save" id="ql-save">Save</button>
+        <button class="bm-btn-cancel" id="ql-cancel">Cancel</button>
       </div>
     </div>
   </div>
 
 
   <!-- =============================================
-       TEAM ACTIONS DATA — loaded as a plain script tag (not
-       fetch()) so it works identically under file:// and
-       Marcus's chrome-extension:// bundled New Tab copy.
-       Sets the global TEAM_ACTIONS_DATA array, read below.
+       DATA — Inbox Links (2026-08-14). Plain global-defining script, NOT
+       fetch() — fetch() of a sibling file hits Chrome's CORS block under
+       file:// origins (same reason team-actions-data.js was never loaded
+       via fetch either). Generated by Marcus Webb's
+       Scripts\generate_inbox_links_data.py, a live scan of Team Inbox/ and
+       Owners Inbox/ cross-referenced against pka.db. Defines
+       INBOX_LINKS_DATA (array) and INBOX_LINKS_GENERATED_AT (string) —
+       consumed by the Inbox Links render code below.
   ============================================== -->
-  <!-- team-actions-data.js intentionally NOT included in this public mirror -- no sync channel exists yet for its content (only for dismissed-ids), and it contains real internal items (e.g. a live payable invoice amount). Team Actions section on this mirror will show "Nothing outstanding right now" -- known, deliberate limitation, not a bug. See SETUP.md. -->
-
+  <!-- inbox-links-data.js intentionally NOT included in this public mirror -- it is a machine-generated live scan of Team Inbox/Owners Inbox filenames (real internal filenames, some naming team members), same sensitivity class as the old Team Actions data. No sync channel exists for this content. Inbox Links section on this mirror falls back to its own empty state (existing code already guards for INBOX_LINKS_DATA being undefined) -- known, deliberate limitation, not a bug. -->
 
   <!-- =============================================
        SCRIPTS
@@ -1686,8 +2292,30 @@
   <script>
 
   /* ================================================
-     PKA SYNC — cross-device backend for Bookmarks and the
-     Team Actions/Payables "dismissed" state (2026-07-13,
+     DEPRECATED-KEY CLEANUP — Team Actions was dropped from the
+     dashboard in the 2026-07-29 scope narrowing (replaced by
+     Todoist + Evelyn's Morning Brief) and My Navigation was dropped
+     round 2 (2026-08-01, redundant with Quick Links — see build
+     report). Neither feature's code reads or writes these keys any
+     more; this just clears out whatever a given browser already had
+     stored so they don't sit around as orphaned localStorage
+     indefinitely. Safe to run every load — a no-op once a device has
+     been cleaned up once.
+
+     NOTE: pka_quicknotes is deliberately NOT swept here any more —
+     Quick Notes was cut round 1 (2026-07-29) but David asked for it
+     back round 2 (2026-08-01), relocated to a nav-bar popover. The
+     key is reused as-is; see the QUICK NOTES block below.
+  ================================================ */
+  (function () {
+    try {
+      localStorage.removeItem('pka_team_actions_dismissed');
+      localStorage.removeItem('pka_navlinks');
+    } catch (e) {}
+  }());
+
+  /* ================================================
+     PKA SYNC — cross-device backend for Bookmarks (2026-07-13,
      Marcus Webb). Backed by the "PKA Sync" Google Sheet via
      an Apps Script Web App — no OAuth in the browser, plain
      fetch() to a public (anonymous-access) URL. localStorage
@@ -1698,14 +2326,19 @@
      must keep working exactly as it always has on localStorage
      alone; sync is a bonus, never a hard dependency.
 
+     Originally also synced the Team Actions "dismissed" state;
+     that key stopped being written the moment Team Actions was
+     dropped (2026-08-01 scope narrowing) — see the deprecated-key
+     cleanup above. PkaSync itself is generic (any key/value) and
+     stays in place for Bookmarks.
+
      Contract with the Web App (see PKA-Infra\google-sheets-tool\
      pka_sync_webapp\Code.gs):
        GET  ?key=<key>            -> { value, updatedBy, updatedAt }
        POST { key, value, updatedBy } -> { ok, updatedAt }
      value is always the FULL current value (whole-value
-     replace), matching how both pka_bookmarks and
-     pka_team_actions_dismissed are already stored as single
-     localStorage values.
+     replace), matching how pka_bookmarks is stored as a single
+     localStorage value.
   ================================================ */
   var PkaSync = (function () {
     'use strict';
@@ -1918,36 +2551,30 @@
         + '</div>';
     }
 
-    /* ---- Render visible (accordion) ---- */
+    /* ---- Render visible (accordion, 2 CSS columns) + Pinned (own always-
+       open column) ----
+       Round 2 (2026-08-01): Pinned used to be a virtual category folded
+       into the same single-column accordion list (first item when
+       non-empty). Now that My Navigation's column is gone, Bookmarks
+       gets a proper #bm-layout: Pinned renders into its own #bm-pinned
+       container (always expanded, no toggle/chevron — see
+       renderPinned()), and every real category renders into #bm-visible,
+       which lays them out in a 2-column CSS multi-column flow (1 column
+       under the Chromebook breakpoint — see .bm-visible-area CSS). */
     function renderVisible() {
       var container = document.getElementById('bm-visible');
       var cats = getCategories();
 
-      /* "Pinned" is a virtual category — not stored on any bookmark's own
-         .category, just aggregated here from every bookmark (in any real
-         category) with pinned:true. Only shown when at least one bookmark
-         is pinned, so it never renders as a stray empty group. */
-      var pinnedItems = state.visible.filter(function (b) { return b.pinned; })
-        .sort(function (a, b) { return a.name.localeCompare(b.name); });
-      var allCats = pinnedItems.length ? ['Pinned'].concat(cats) : cats;
-
       /* If stored openCat no longer exists, fall back to first */
-      if (allCats.indexOf(openCat) === -1) openCat = allCats[0] || null;
+      if (cats.indexOf(openCat) === -1) openCat = cats[0] || null;
 
-      var html = allCats.map(function (cat) {
+      var html = cats.map(function (cat) {
         var isOpen   = cat === openCat;
-        var isPinned = cat === 'Pinned';
-        var items    = isPinned
-          ? pinnedItems
-          : state.visible.filter(function (b) { return b.category === cat; })
+        var items    = state.visible.filter(function (b) { return b.category === cat; })
               .sort(function (a, b) { return a.name.localeCompare(b.name); });
         var panelId  = 'bmp-' + cat.toLowerCase().replace(/[^a-z0-9]/g, '-');
-        var colorVar = isPinned ? '--accent' : catColorVar(cat);
-        var label    = isPinned ? '&#9733; Pinned' : esc(cat);
-        /* Pinned is an aggregated view, not a real category — no "Add"
-           button (there's nowhere for a brand-new bookmark to be "added
-           pinned" into; pin an existing one from its real category instead). */
-        var addBtn   = isPinned ? '' : '<button class="bm-add-btn" data-add-cat="' + esc(cat) + '">&#65291; Add</button>';
+        var colorVar = catColorVar(cat);
+        var addBtn   = '<button class="bm-add-btn" data-add-cat="' + esc(cat) + '">&#65291; Add</button>';
 
         var chips = items.map(function (b) { return chipHtml(b, true); }).join('');
 
@@ -1955,7 +2582,7 @@
           + '<div class="bm-accordion-header">'
           + '<button class="bm-cat-toggle" data-category="' + esc(cat) + '" aria-expanded="' + isOpen + '" aria-controls="' + panelId + '">'
           + '<span class="bm-chevron" aria-hidden="true">&#9656;</span>'
-          + '<span class="bm-category-label">' + label + '</span>'
+          + '<span class="bm-category-label">' + esc(cat) + '</span>'
           + '</button>'
           + addBtn
           + '</div>'
@@ -1968,7 +2595,39 @@
       }).join('');
 
       container.innerHTML = html;
+      renderPinned();
       bindVisibleEvents();
+      bindChipControls(container);
+      bindChipControls(document.getElementById('bm-pinned'));
+    }
+
+    /* ---- Render Pinned — own column, always open (no collapse) ----
+       Reuses the exact .bm-accordion-item "open" markup/CSS (colored
+       fill, white text) so it looks identical to an expanded category —
+       it just never collapses and has no toggle/chevron. Aggregated from
+       every bookmark (in any real category) with pinned:true; never
+       empty-hides, shows a hint instead so the always-visible column
+       doesn't look broken with nothing pinned yet. */
+    function renderPinned() {
+      var container = document.getElementById('bm-pinned');
+      if (!container) return;
+      var pinnedItems = state.visible.filter(function (b) { return b.pinned; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+      var chips = pinnedItems.map(function (b) { return chipHtml(b, true); }).join('');
+
+      container.innerHTML =
+        '<div class="bm-accordion-item open" style="--cat:var(--accent)">'
+        + '<div class="bm-accordion-header">'
+        + '<div class="bm-pinned-heading">'
+        + '<span class="bm-category-label">&#9733; Pinned</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="bm-accordion-panel bm-pinned-panel" role="region" aria-label="Pinned bookmarks">'
+        + '<div class="bm-panel-inner">'
+        + '<div class="bm-chips">' + (chips || '<span class="bm-empty">Pin a bookmark (&#9734; on any link) to see it here.</span>') + '</div>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
     }
 
     /* ---- Render hidden bookmarks ---- */
@@ -1988,10 +2647,16 @@
       bindHiddenEvents();
     }
 
-    /* ---- Event binding ---- */
+    /* ---- Event binding ----
+       Accordion toggle/add-button binding stays scoped to #bm-visible
+       only (Pinned in #bm-pinned has neither — see renderPinned).
+       Edit/delete/pin/move controls are shared by both containers, bound
+       via bindChipControls(root) below so Pinned's own edit/delete/pin
+       buttons (it renders the same chip markup) work identically. */
     function bindVisibleEvents() {
-      /* Accordion toggles */
-      document.querySelectorAll('.bm-cat-toggle').forEach(function (btn) {
+      /* Accordion toggles — exclusivity scoped to #bm-visible; Pinned is
+         a separate always-open container, unaffected either way. */
+      document.querySelectorAll('#bm-visible .bm-cat-toggle').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var cat    = btn.dataset.category;
           var item   = btn.closest('.bm-accordion-item');
@@ -2014,43 +2679,46 @@
         });
       });
 
-      /* Edit */
-      document.querySelectorAll('#bm-visible .bm-ctrl-edit').forEach(function (btn) {
+      /* Add per category */
+      document.querySelectorAll('#bm-visible .bm-add-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          openModal('add', null, 'visible', btn.dataset.addCat);
+        });
+      });
+    }
+
+    /* ---- Chip-level controls (edit / delete / pin / move) — shared by
+       #bm-visible AND #bm-pinned, since Pinned renders the same chip
+       markup for the same underlying bookmark objects. ---- */
+    function bindChipControls(root) {
+      if (!root) return;
+
+      root.querySelectorAll('.bm-ctrl-edit').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           openModal('edit', btn.dataset.id);
         });
       });
 
-      /* Delete */
-      document.querySelectorAll('#bm-visible .bm-ctrl-delete').forEach(function (btn) {
+      root.querySelectorAll('.bm-ctrl-delete').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           deleteBookmark(btn.dataset.id);
         });
       });
 
-      /* Pin / unpin */
-      document.querySelectorAll('#bm-visible .bm-ctrl-pin').forEach(function (btn) {
+      root.querySelectorAll('.bm-ctrl-pin').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           togglePin(btn.dataset.id);
         });
       });
 
-      /* Move / copy to another category */
-      document.querySelectorAll('#bm-visible .bm-ctrl-move').forEach(function (btn) {
+      root.querySelectorAll('.bm-ctrl-move').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           openMoveModal(btn.dataset.id);
-        });
-      });
-
-      /* Add per category */
-      document.querySelectorAll('#bm-visible .bm-add-btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          openModal('add', null, 'visible', btn.dataset.addCat);
         });
       });
     }
@@ -2318,21 +2986,35 @@
   }());
 
   /* ================================================
-     NAV LINKS — personal navigation (local folders,
-     Google Drive / OneDrive folders). Same accordion +
-     modal CRUD pattern as Bookmarks above, reusing its
-     CSS classes, but a separate dataset/localStorage
-     key and no visible/hidden split. Adds a "recently
-     added" strip that surfaces new links automatically.
+     QUICK LINKS — grouped category accordion (round 3, 2026-08-12, Mia
+     Chen). Supersedes the round-2 flat-tile-row version below in git
+     history; same seed+localStorage+render CRUD pattern as before, now
+     with a category field per item and an exclusive-open accordion of
+     category cards (same interaction language as the Bookmarks accordion
+     above — see .ql-cat-* CSS). Built from a mockup David reviewed and
+     signed off on before this went live:
+     Project Build\PKA Dashboard\_mockups\quicklinks_grouped_mockup_2026-08-12.html
+
+     MIGRATION NOTE: David's live browser already had 12 real entries
+     saved under the OLD flat (uncategorized) shape in localStorage.
+     initLinks() below detects that on load and converts it in place —
+     assigning each existing item a category by name-matching, preserving
+     every id/name/url/icon exactly — rather than re-seeding blank. The
+     one deliberate exception is the Obsidian tile: as part of this same
+     migration its link is upgraded from an old winexplorer:// folder path
+     to the real, tested obsidian://open?vault=Obsidian%20PC URI (David's
+     2026-08-12 ask — confirmed working via a direct ShellExecute test
+     that launched the correct vault; see build report). Every other
+     link's URL is left completely untouched by the migration.
   ================================================ */
   (function () {
     'use strict';
 
-    var LS_KEY = 'pka_navlinks';
-    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
+    var LS_KEY = 'pka_quicklinks';
+    var SCHEMA_VERSION = 2;   // bumped 1 -> 2: items now carry a category field
 
     function genId() {
-      return 'nl' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+      return 'ql' + Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
     function esc(s) {
@@ -2341,19 +3023,57 @@
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    /* Real, verified local paths — no Drive/OneDrive-cloud links invented;
-       David adds those himself via the Add modal since we don't have his
-       real share links.
-       Folder entries use Marcus's winexplorer:/// handler (opens native
-       Windows File Explorer instead of an in-browser directory listing);
-       file entries (a page / a .md doc) stay on file:/// as before. */
-    var SEED_NAVLINKS = [];  /* stripped for public mirror -- local-only winexplorer/file paths, meaningless off this PC */
+    /* ---- Category definitions ----
+       Real, user-facing categories, in the fixed display order David
+       signed off on in the mockup (Daily Ablution pinned first). Colours
+       are the --qlcat-* custom properties added to :root above.
+       'uncategorized' is NOT a real category — it's the migration
+       fallback bucket for any item a future name-matching pass can't
+       confidently place, and is only rendered by render() below when it
+       actually has items in it (never shown empty). It's still a
+       selectable option in the Add/Edit modal so an already-migrated
+       "Uncategorized" item can be explicitly filed for real. */
+    var CATEGORY_DEFS = [
+      { key: 'daily-ablution', label: 'Daily Ablution',     color: 'var(--qlcat-ablution)' },
+      { key: 'finance',        label: 'Finance',            color: 'var(--qlcat-finance)' },
+      { key: 'team',           label: 'Team',               color: 'var(--qlcat-team)' },
+      { key: 'production',     label: 'Production',         color: 'var(--qlcat-production)' },
+      { key: 'tools',          label: 'Tools & Resources',  color: 'var(--qlcat-tools)' },
+      { key: 'marketing',      label: 'Marketing',          color: 'var(--qlcat-marketing)' }
+    ];
+    var UNCATEGORIZED_DEF = { key: 'uncategorized', label: 'Uncategorized', color: 'var(--qlcat-uncat)' };
 
-    /* Old file:/// paths for the six folder entries above — used to migrate
-       any already-saved localStorage entries onto the new winexplorer:/// scheme. */
-    var FOLDER_PATHS_TO_MIGRATE = [];  /* stripped for public mirror -- real internal paths + Windows username; inert anyway on a fresh install with empty localStorage */
-
-    var SEED_TIME = Date.now() - (1000 * 60 * 60 * 24 * 365); /* backdated so any real add ranks above it */
+    /* Seed — used only for a brand-new/reset browser with no existing
+       localStorage; David's real live browser goes through the migration
+       path below instead, not this. Carries the original 9 seeded tiles
+       forward (names/URLs unchanged) now with a category each, plus the
+       Obsidian URI swap. NOTE: OneDrive, Newsletter Promo and
+       "Book Bible (Old)" exist in David's real Quick Links (added by him
+       directly via "Add Link", same as the pre-existing Printer Quotes
+       gap documented below) but were never part of this seed array — his
+       real URLs for those 3 aren't known here, so they are deliberately
+       NOT invented/guessed into this list. They migrate correctly for
+       him (real stored URL preserved, just categorized), but same as
+       Printer Quotes already was, won't appear on a fresh/reset browser
+       until added once by hand. */
+    var SEED_QUICKLINKS = [
+      { name: 'WriteApp',             url: '../../WriteApp/writer.html', icon: '\u270D\uFE0F', category: 'daily-ablution' },
+      { name: 'Obsidian',             url: 'obsidian://open?vault=Obsidian%20PC', icon: '\uD83D\uDDD2\uFE0F', category: 'daily-ablution' },
+      /* Master Sales Tracker Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
+      /* PO & Invoice Tracker Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
+      /* Added 2026-08-12 (Marcus Webb) \u2014 Printer_Quotes_Per_Title_Complete
+         now lives in the HEADPRESS Drive folder; Quick Links has no sync
+         backend (see PKA SYNC comment above \u2014 only Bookmarks is wired to
+         it), so this seed entry appears on any fresh load/reset but will
+         NOT retroactively appear in an already-populated browser's
+         localStorage \u2014 David (or whoever) needs to add it once via the
+         "Add Link" tile there too if it doesn't show up automatically. */
+      /* Printer Quotes Per Title Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
+      /* Owner's Inbox Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
+      /* Team Inbox Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
+      { name: 'Book Production Hub',  url: 'https://netherleys.github.io/book-production-hub/', icon: '\uD83D\uDCDA', category: 'production' },
+      { name: 'Image Resize Tool',    url: '../Image%20Resize/index.html', icon: '\uD83D\uDDBC\uFE0F', category: 'tools' }
+    ];
 
     function getLinks() {
       try {
@@ -2368,8 +3088,8 @@
     }
 
     function seedItems() {
-      return SEED_NAVLINKS.map(function (b) {
-        return { id: genId(), name: b.name, url: b.url, category: b.category, dateAdded: SEED_TIME };
+      return SEED_QUICKLINKS.map(function (b) {
+        return { id: genId(), name: b.name, url: b.url, icon: b.icon, category: b.category };
       });
     }
 
@@ -2377,15 +3097,68 @@
       return { version: SCHEMA_VERSION, items: seedItems() };
     }
 
-    /* Defensive shape check — catches stale/incompatible data saved by an
-       older code version so it can never silently break rendering. */
-    function isValidLinksShape(data) {
+    /* Defensive shape check — catches stale/incompatible data saved by
+       an older code version so it can never silently break rendering.
+       Deliberately does NOT require `category` here — a pre-migration
+       item (old flat shape) still passes this check and falls through to
+       the migration path below, instead of being wrongly treated as
+       corrupt and wiped back to the seed. */
+    function isValidShape(data) {
       return !!data
         && Array.isArray(data.items)
         && data.items.every(function (b) {
-          return b && typeof b.id === 'string' && typeof b.name === 'string'
-            && typeof b.url === 'string' && typeof b.category === 'string';
+          return b && typeof b.id === 'string' && typeof b.name === 'string' && typeof b.url === 'string';
         });
+    }
+
+    /* ---- One-time migration: old flat/uncategorized items -> categorized ----
+       Name-matched case-insensitively against the real 12 tiles from
+       David's screenshot (2026-08-12) — substring/pattern matches rather
+       than exact-string, so small stored-name variations (e.g. "Printer
+       Quotes" vs "Printer Quotes Per Title") still land correctly.
+       Anything genuinely unrecognised falls into 'uncategorized' rather
+       than being force-fit into a guessed category. */
+    function legacyCategoryFor(name) {
+      var n = String(name || '').toLowerCase();
+      if (/write ?app/.test(n))            return 'daily-ablution';
+      if (/obsidian/.test(n))              return 'daily-ablution';
+      if (/master sales tracker/.test(n))  return 'finance';
+      if (/invoice/.test(n))               return 'finance';
+      if (/printer quotes/.test(n))        return 'finance';
+      if (/owner.?s?\s*inbox/.test(n))     return 'team';
+      if (/team inbox/.test(n))            return 'team';
+      if (/book production hub/.test(n))   return 'production';
+      if (/book bible/.test(n))            return 'production';
+      if (/image resize/.test(n))          return 'tools';
+      if (/onedrive/.test(n))              return 'tools';
+      if (/newsletter/.test(n))            return 'marketing';
+      return 'uncategorized';
+    }
+
+    function needsMigration(data) {
+      return data.items.some(function (it) {
+        return typeof it.category !== 'string' || !it.category;
+      });
+    }
+
+    function migrateItems(items) {
+      return items.map(function (it) {
+        var out = {
+          id:       it.id,
+          name:     it.name,
+          url:      it.url,
+          icon:     it.icon,
+          category: (typeof it.category === 'string' && it.category) ? it.category : legacyCategoryFor(it.name)
+        };
+        /* Deliberate one-time content upgrade riding along with this
+           migration, not just a shape change — see file-header note. */
+        if (/obsidian/i.test(it.name)) {
+          out.name = 'Obsidian';
+          out.url  = 'obsidian://open?vault=Obsidian%20PC';
+          out.icon = it.icon || '\uD83D\uDDD2\uFE0F';
+        }
+        return out;
+      });
     }
 
     function initLinks() {
@@ -2394,197 +3167,242 @@
         saveLinks(fresh);
         return fresh;
       }
-
       var data = getLinks();
-
-      if (!isValidLinksShape(data)) {
-        /* Unrecognised/corrupt shape — fall back to fresh seed data for
-           THIS key only, rather than crashing or rendering blank. */
+      if (!isValidShape(data)) {
         var reset = freshLinks();
         saveLinks(reset);
         return reset;
       }
-
-      var changed = data.version !== SCHEMA_VERSION;
-
-      /* Migration: an earlier build seeded one clearly-fake placeholder
-         ("Example Folder…"). Now that real entries exist, drop it — and
-         if nothing real had been added yet, replace it with the real seed. */
-      if (data && data.items) {
-        var hadPlaceholder = data.items.some(function (b) { return b.name && b.name.indexOf('Example Folder') === 0; });
-        if (hadPlaceholder) {
-          data.items = data.items.filter(function (b) { return !(b.name && b.name.indexOf('Example Folder') === 0); });
-          if (data.items.length === 0) data.items = seedItems();
-          changed = true;
-        }
+      if (needsMigration(data)) {
+        data.items = migrateItems(data.items);
+        data.version = SCHEMA_VERSION;
+        saveLinks(data);
+        return data;
       }
-
-      /* Migration: folder entries saved under the old file:/// scheme move
-         to Marcus's winexplorer:/// handler (native Explorer, no in-browser
-         directory listing) — rewritten in place, once, on load. */
-      if (data && data.items) {
-        data.items.forEach(function (b) {
-          if (b.url && b.url.indexOf('file:///') === 0) {
-            var path = b.url.slice('file:///'.length);
-            if (FOLDER_PATHS_TO_MIGRATE.indexOf(path) !== -1) {
-              b.url = 'winexplorer:///' + path;
-              changed = true;
-            }
-          }
-        });
-      }
-
-      if (changed) {
+      if (data.version !== SCHEMA_VERSION) {
         data.version = SCHEMA_VERSION;
         saveLinks(data);
       }
-
       return data;
     }
 
     /* ---- State ---- */
     var state      = initLinks();
-    var openCat    = state.items.length ? state.items[0].category : null;
     var modalState = { mode: 'add', id: null };
+    /* Exclusive accordion — at most one category open at a time (David's
+       2026-08-12 ask, a deliberate departure from Bookmarks' own
+       #bm-visible accordion which allows several open at once). Daily
+       Ablution starts open on every load; null once the user explicitly
+       collapses whichever one is open, leaving nothing expanded. */
+    var openCat = 'daily-ablution';
 
-    function getCategories() {
-      var seen = [];
-      state.items.forEach(function (b) {
-        if (seen.indexOf(b.category) === -1) seen.push(b.category);
-      });
-      return seen;
+    /* Cycled onto each tile's corner-shape decoration — purely visual,
+       see .corner-shape in the RESKIN styles above. */
+    var SHAPES = ['circle', 'ring', 'triangle', 'star'];
+
+    /* Round 3 (2026-08-01) — per-tile background colour, David's ask:
+       "as in the wireframe (Actions for me)". Kept unchanged in the
+       2026-08-12 grouped-categories build — this is a per-TILE colour
+       (hashed off the tile's own id), distinct from the new per-CATEGORY
+       colour (--qlcat-*) used on the accordion headers; the two colour
+       systems intentionally coexist. */
+    var QL_PALETTE = [
+      { fill: '#7FA3B8', ink: '#17313D' }, // powder blue   (flag)
+      { fill: '#C97A9B', ink: '#4A1A2E' }, // dusty rose     (decide)
+      { fill: '#E0BB4A', ink: '#4A3900' }, // mustard gold   (review)
+      { fill: '#E0A868', ink: '#5C3813' }, // rust/amber     (payable)
+      { fill: '#5FA89C', ink: '#0F3630' }, // teal           (calendar)
+      { fill: '#A6B15A', ink: '#33390F' }  // olive          (todoist)
+    ];
+
+    function hashId(id) {
+      var h = 0;
+      for (var i = 0; i < id.length; i++) {
+        h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+      }
+      return Math.abs(h);
     }
 
-    function chipHtml(b) {
-      return '<div class="bm-chip" data-id="' + esc(b.id) + '">'
-        + '<a href="' + esc(b.url) + '" target="_blank" rel="noopener noreferrer" class="bm-chip-link" title="' + esc(b.name) + '">'
-        + '<span class="bm-chip-name">' + esc(b.name) + '</span>'
-        + '<span class="bm-chip-ext" aria-hidden="true">&#8599;</span>'
-        + (b.note ? '<span class="bm-chip-note">' + esc(b.note) + '</span>' : '')
+    function tileFill(id) {
+      return QL_PALETTE[hashId(id) % QL_PALETTE.length];
+    }
+
+    function tileHtml(item, index) {
+      var shape = SHAPES[index % SHAPES.length];
+      var icon  = item.icon ? esc(item.icon) : esc(item.name.slice(0, 2).toUpperCase());
+      var fill  = tileFill(item.id);
+      return '<div class="ql-tile-wrap" data-id="' + esc(item.id) + '">'
+        + '<a class="ql-tile" href="' + esc(item.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(item.name) + '" style="--ql-fill:' + fill.fill + ';--ql-ink:' + fill.ink + '">'
+        + '<span class="corner-shape shape-' + shape + '" aria-hidden="true"></span>'
+        + '<span class="ql-badge">' + icon + '</span>'
+        + '<span class="ql-label">' + esc(item.name) + '</span>'
         + '</a>'
-        + '<span class="bm-chip-controls">'
-        + '<button class="bm-ctrl-btn bm-ctrl-edit" data-id="' + esc(b.id) + '" title="Edit link">&#9998;</button>'
-        + '<button class="bm-ctrl-btn bm-ctrl-delete" data-id="' + esc(b.id) + '" title="Delete link">&#10005;</button>'
+        + '<span class="ql-tile-controls">'
+        + '<button class="ql-ctrl-btn ql-ctrl-edit" data-id="' + esc(item.id) + '" title="Edit link">&#9998;</button>'
+        + '<button class="ql-ctrl-btn ql-ctrl-delete" data-id="' + esc(item.id) + '" title="Delete link">&#10005;</button>'
         + '</span>'
         + '</div>';
     }
 
-    /* ---- Render: category accordion ---- */
-    function renderVisible() {
-      var container = document.getElementById('nl-visible');
-      var cats = getCategories();
-
-      if (cats.indexOf(openCat) === -1) openCat = cats[0] || null;
-
-      var html = cats.map(function (cat) {
-        var isOpen = cat === openCat;
-        var items  = state.items.filter(function (b) { return b.category === cat; })
-          .sort(function (a, b) { return a.name.localeCompare(b.name); });
-        var panelId = 'nlp-' + cat.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-        var chips = items.map(chipHtml).join('');
-
-        return '<div class="bm-accordion-item' + (isOpen ? ' open' : '') + '" data-cat="' + esc(cat) + '">'
-          + '<div class="bm-accordion-header">'
-          + '<button class="bm-cat-toggle" data-category="' + esc(cat) + '" aria-expanded="' + isOpen + '" aria-controls="' + panelId + '">'
-          + '<span class="bm-chevron" aria-hidden="true">&#9656;</span>'
-          + '<span class="bm-category-label">' + esc(cat) + '</span>'
-          + '</button>'
-          + '<button class="bm-add-btn" data-add-cat="' + esc(cat) + '">&#65291; Add</button>'
-          + '</div>'
-          + '<div class="bm-accordion-panel" id="' + panelId + '" role="region" aria-label="' + esc(cat) + ' links">'
-          + '<div class="bm-panel-inner">'
-          + '<div class="bm-chips">' + (chips || '<span class="bm-empty">No links yet.</span>') + '</div>'
-          + '</div>'
-          + '</div>'
-          + '</div>';
-      }).join('');
-
-      container.innerHTML = html || '<span class="bm-empty">No links yet — use Add to create a category.</span>';
-      bindVisibleEvents();
-      bindRowEvents(container);
+    function catHtml(catDef, items) {
+      var isOpen = catDef.key === openCat;
+      var tiles  = items.map(function (item, i) { return tileHtml(item, i); }).join('');
+      var addTile = '<button class="ql-tile ql-tile-add" type="button" data-add-cat="' + esc(catDef.key) + '" title="Add a Quick Link to ' + esc(catDef.label) + '">'
+        + '<span class="ql-badge ql-badge-add" aria-hidden="true">&#65291;</span>'
+        + '<span class="ql-label">Add Link</span>'
+        + '</button>';
+      return '<div class="ql-cat-item' + (isOpen ? ' open' : '') + '" data-cat="' + esc(catDef.key) + '" style="--cat:' + catDef.color + '">'
+        + '<div class="ql-cat-header">'
+        + '<button class="ql-cat-toggle" data-category="' + esc(catDef.key) + '" aria-expanded="' + isOpen + '">'
+        + '<span class="ql-cat-chevron" aria-hidden="true">&#9656;</span>'
+        + '<span class="ql-cat-label">' + esc(catDef.label) + '</span>'
+        + '<span class="ql-cat-count">' + items.length + '</span>'
+        + '</button>'
+        + '</div>'
+        + '<div class="ql-cat-panel">'
+        + '<div class="ql-cat-panel-inner"><div class="ql-tiles-row">' + tiles + addTile + '</div></div>'
+        + '</div>'
+        + '</div>';
     }
 
-    /* ---- Shared row-level events (edit / delete) for any container ---- */
-    function bindRowEvents(root) {
-      root.querySelectorAll('.bm-ctrl-edit').forEach(function (btn) {
+    /* Growing-list-proof: panel height for whichever category is open is
+       always measured live off scrollHeight, never a fixed cap, so a
+       category holding many more tiles later (David's own "there will
+       likely be additions along the way") never gets clipped, however
+       many rows it wraps to. */
+    function applyOpenPanelHeight() {
+      var container = document.getElementById('ql-cat-list');
+      if (!container) return;
+      var openPanel = container.querySelector('.ql-cat-item.open .ql-cat-panel');
+      if (openPanel) openPanel.style.maxHeight = openPanel.scrollHeight + 'px';
+    }
+
+    function render() {
+      var container = document.getElementById('ql-cat-list');
+      if (!container) return;
+
+      var byCat = {};
+      state.items.forEach(function (it) {
+        var known = CATEGORY_DEFS.some(function (c) { return c.key === it.category; });
+        var k = known ? it.category : 'uncategorized';
+        (byCat[k] = byCat[k] || []).push(it);
+      });
+
+      var defs = CATEGORY_DEFS.slice();
+      if (byCat.uncategorized && byCat.uncategorized.length) defs.push(UNCATEGORIZED_DEF);
+
+      if (openCat && !defs.some(function (c) { return c.key === openCat; })) {
+        openCat = defs[0] ? defs[0].key : null;
+      }
+
+      container.innerHTML = defs.map(function (c) { return catHtml(c, byCat[c.key] || []); }).join('');
+
+      bindEvents();
+      applyOpenPanelHeight();
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('#ql-cat-list .ql-ctrl-edit').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
           openModal('edit', btn.dataset.id);
         });
       });
-      root.querySelectorAll('.bm-ctrl-delete').forEach(function (btn) {
+      document.querySelectorAll('#ql-cat-list .ql-ctrl-delete').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.preventDefault(); e.stopPropagation();
-          deleteLink(btn.dataset.id);
+          deleteItem(btn.dataset.id);
         });
       });
-    }
+      document.querySelectorAll('#ql-cat-list .ql-tile-add').forEach(function (btn) {
+        btn.addEventListener('click', function () { openModal('add', null, btn.dataset.addCat); });
+      });
 
-    /* ---- Accordion + add-button events ---- */
-    function bindVisibleEvents() {
-      document.querySelectorAll('#nl-visible .bm-cat-toggle').forEach(function (btn) {
+      /* Exclusive accordion toggle — in-place class/height toggling (not
+         a full re-render), same technique already used by the Bookmarks
+         #bm-visible accordion elsewhere in this file, so the CSS
+         max-height transition actually animates instead of snapping. */
+      document.querySelectorAll('#ql-cat-list .ql-cat-toggle').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var cat    = btn.dataset.category;
-          var item   = btn.closest('.bm-accordion-item');
+          var item   = btn.closest('.ql-cat-item');
           var isOpen = item.classList.contains('open');
 
-          document.querySelectorAll('#nl-visible .bm-accordion-item').forEach(function (el) {
-            el.classList.remove('open');
-            el.querySelector('.bm-cat-toggle').setAttribute('aria-expanded', 'false');
+          document.querySelectorAll('#ql-cat-list .ql-cat-item.open').forEach(function (openItem) {
+            if (openItem === item) return;
+            openItem.classList.remove('open');
+            openItem.querySelector('.ql-cat-toggle').setAttribute('aria-expanded', 'false');
+            openItem.querySelector('.ql-cat-panel').style.maxHeight = '0px';
           });
 
-          if (!isOpen) {
+          var panel = item.querySelector('.ql-cat-panel');
+          if (isOpen) {
+            panel.style.maxHeight = '0px';
+            item.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            openCat = null;
+          } else {
             item.classList.add('open');
             btn.setAttribute('aria-expanded', 'true');
+            panel.style.maxHeight = panel.scrollHeight + 'px';
             openCat = cat;
-          } else {
-            openCat = null;
           }
         });
       });
+    }
 
-      document.querySelectorAll('#nl-visible .bm-add-btn').forEach(function (btn) {
-        btn.addEventListener('click', function (e) {
-          e.stopPropagation();
-          openModal('add', null, btn.dataset.addCat);
-        });
-      });
+    /* Re-measure the open panel on resize — tile wrapping changes row
+       count, and therefore height, at different viewport widths. Bound
+       once at module scope (not inside render()) so it never stacks
+       duplicate listeners across re-renders. */
+    window.addEventListener('resize', applyOpenPanelHeight);
+
+    function deleteItem(id) {
+      var item = state.items.find(function (b) { return b.id === id; });
+      if (!item) return;
+      if (!confirm('Remove "' + item.name + '"?')) return;
+      state.items = state.items.filter(function (b) { return b.id !== id; });
+      saveLinks(state);
+      render();
     }
 
     /* ---- Modal ---- */
-    var modal    = document.getElementById('nl-modal');
-    var fName    = document.getElementById('nl-f-name');
-    var fUrl     = document.getElementById('nl-f-url');
-    var fCat     = document.getElementById('nl-f-cat');
-    var fNote    = document.getElementById('nl-f-note');
+    var modal      = document.getElementById('ql-modal');
+    var fName      = document.getElementById('ql-f-name');
+    var fUrl       = document.getElementById('ql-f-url');
+    var fIcon      = document.getElementById('ql-f-icon');
+    var fCategory  = document.getElementById('ql-f-category');
 
-    function populateCatSelect(selected) {
-      var cats = getCategories();
-      fCat.innerHTML = cats.map(function (c) {
-        return '<option value="' + esc(c) + '"' + (c === selected ? ' selected' : '') + '>' + esc(c) + '</option>';
-      }).join('') + '<option value="__new__">&#65291; New category…</option>';
-    }
+    /* Populate the category <select> from CATEGORY_DEFS (+ Uncategorized)
+       once, here, rather than hardcoding <option> tags in the HTML, so
+       the dropdown and the accordion's own category list can never drift
+       out of sync. */
+    (function populateCategorySelect() {
+      var all = CATEGORY_DEFS.concat([UNCATEGORIZED_DEF]);
+      fCategory.innerHTML = all.map(function (c) {
+        return '<option value="' + esc(c.key) + '">' + esc(c.label) + '</option>';
+      }).join('');
+    }());
 
-    function openModal(mode, id, prefillCat) {
+    function openModal(mode, id, presetCategory) {
       fName.style.borderColor = '';
       fUrl.style.borderColor  = '';
       modalState = { mode: mode, id: id };
 
       if (mode === 'edit') {
-        var link = state.items.find(function (b) { return b.id === id; });
-        if (!link) return;
-        fName.value = link.name;
-        fUrl.value  = link.url;
-        fNote.value = link.note || '';
-        populateCatSelect(link.category || '');
-        document.getElementById('nl-modal-title').textContent = 'Edit Nav Link';
+        var item = state.items.find(function (b) { return b.id === id; });
+        if (!item) return;
+        fName.value     = item.name;
+        fUrl.value      = item.url;
+        fIcon.value     = item.icon || '';
+        fCategory.value = item.category || 'uncategorized';
+        document.getElementById('ql-modal-title').textContent = 'Edit Quick Link';
       } else {
-        fName.value = '';
-        fUrl.value  = '';
-        fNote.value = '';
-        populateCatSelect(prefillCat || getCategories()[0] || 'Local Folders');
-        document.getElementById('nl-modal-title').textContent = 'Add Nav Link';
+        fName.value     = '';
+        fUrl.value      = '';
+        fIcon.value     = '';
+        fCategory.value = presetCategory || openCat || 'daily-ablution';
+        document.getElementById('ql-modal-title').textContent = 'Add Quick Link';
       }
 
       modal.hidden = false;
@@ -2593,17 +3411,17 @@
 
     function closeModal() { modal.hidden = true; }
 
-    document.getElementById('nl-cancel').addEventListener('click', closeModal);
-    document.getElementById('nl-backdrop').addEventListener('click', closeModal);
+    document.getElementById('ql-cancel').addEventListener('click', closeModal);
+    document.getElementById('ql-backdrop').addEventListener('click', closeModal);
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !modal.hidden) closeModal();
     });
 
-    document.getElementById('nl-save').addEventListener('click', function () {
-      var name = fName.value.trim();
-      var url  = fUrl.value.trim();
-      var note = fNote.value.trim();
-      var cat  = fCat.value;
+    document.getElementById('ql-save').addEventListener('click', function () {
+      var name     = fName.value.trim();
+      var url      = fUrl.value.trim();
+      var icon     = fIcon.value.trim();
+      var category = fCategory.value || 'uncategorized';
 
       var invalid = false;
       if (!name) { fName.style.borderColor = '#A34430'; invalid = true; }
@@ -2616,302 +3434,369 @@
         return;
       }
 
-      if (cat === '__new__') {
-        var newCat = prompt('New category name:');
-        if (!newCat || !newCat.trim()) return;
-        cat = newCat.trim();
-      }
-
       if (modalState.mode === 'add') {
-        state.items.push({ id: genId(), name: name, url: url, category: cat, note: note, dateAdded: Date.now() });
+        state.items.push({ id: genId(), name: name, url: url, icon: icon, category: category });
       } else {
         var idx = state.items.findIndex(function (b) { return b.id === modalState.id; });
-        var existing = idx !== -1 ? state.items[idx] : null;
-        var entry = { id: modalState.id, name: name, url: url, category: cat, note: note, dateAdded: existing ? existing.dateAdded : Date.now() };
+        var entry = { id: modalState.id, name: name, url: url, icon: icon, category: category };
         if (idx !== -1) state.items[idx] = entry;
         else state.items.push(entry);
       }
 
+      openCat = category;   // keep the just-touched category open/visible after save
       saveLinks(state);
-      renderVisible();
+      render();
       closeModal();
     });
 
-    /* ---- Delete ---- */
-    function deleteLink(id) {
-      var link = state.items.find(function (b) { return b.id === id; });
-      if (!link) return;
-      if (!confirm('Remove "' + link.name + '"?')) return;
-      state.items = state.items.filter(function (b) { return b.id !== id; });
-      saveLinks(state);
-      renderVisible();
-    }
-
     /* ---- Initial render ---- */
-    renderVisible();
+    render();
 
   }());
 
   /* ================================================
-     QUICK NOTES — plain persistent scratchpad.
-     Deliberately localStorage-only, no live feed/API
-     (a live Todoist feed would need an API token baked
-     into this local file, which we're avoiding).
+     QUICK NOTES — nav-bar popover (round 2, 2026-08-01). David dropped
+     the always-visible widget round 1, then asked for the underlying
+     capability back — relocated and compacted into a small icon in the
+     top nav bar instead. Storage stays deliberately simple (a single
+     localStorage string, same pka_quicknotes key the original widget
+     used) — the ask was to relocate/compact the UI, not build new
+     note-taking functionality.
   ================================================ */
   (function () {
     'use strict';
 
     var LS_KEY = 'pka_quicknotes';
-    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
-    var textarea = document.getElementById('qn-textarea');
-    var status   = document.getElementById('qn-status');
-    if (!textarea) return;
+    var btn      = document.getElementById('notes-nav-btn');
+    var dot      = document.getElementById('notes-dot');
+    var pop      = document.getElementById('notes-popover');
+    var ta       = document.getElementById('notes-textarea');
+    var closeBtn = document.getElementById('notes-close');
+    if (!btn || !pop || !ta || !closeBtn) return;
 
-    var saveTimer = null;
-
-    function save() {
-      try {
-        localStorage.setItem(LS_KEY, JSON.stringify({ version: SCHEMA_VERSION, text: textarea.value }));
-        if (status) {
-          status.textContent = 'Saved';
-          clearTimeout(saveTimer);
-          saveTimer = setTimeout(function () { status.textContent = ' '; }, 1200);
-        }
-      } catch (e) {}
+    function getNote() {
+      try { return localStorage.getItem(LS_KEY) || ''; } catch (e) { return ''; }
+    }
+    function setNote(v) {
+      try { localStorage.setItem(LS_KEY, v); } catch (e) {}
+      updateDot();
+    }
+    function updateDot() {
+      dot.hidden = getNote().trim().length === 0;
     }
 
-    var debounceTimer = null;
-    textarea.addEventListener('input', function () {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(save, 500);
+    ta.value = getNote();
+    updateDot();
+
+    /* Debounced save-as-you-type, same pattern as elsewhere in this file
+       (no explicit Save button — a notepad should just hold what you
+       typed). Also saved on close as a belt-and-braces flush. */
+    var saveTimer = null;
+    ta.addEventListener('input', function () {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { setNote(ta.value); }, 250);
     });
 
-    /* Load — handles both the current { version, text } shape and the
-       plain-string format this used before versioning existed (or any
-       other unrecognised shape), by treating the raw stored value itself
-       as the note content so nothing David has typed is ever lost. */
-    (function loadNote() {
-      var raw = null;
-      try { raw = localStorage.getItem(LS_KEY); } catch (e) {}
-      if (raw === null) return;
+    function openPopover() {
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      ta.focus();
+    }
+    function closePopover() {
+      clearTimeout(saveTimer);
+      setNote(ta.value);
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
 
-      var parsed = null;
-      try { parsed = JSON.parse(raw); } catch (e) {}
-
-      if (parsed && typeof parsed === 'object' && parsed.version === SCHEMA_VERSION && typeof parsed.text === 'string') {
-        textarea.value = parsed.text;
-        return;
-      }
-
-      /* Legacy/unrecognised shape — the raw value IS the note text. */
-      textarea.value = raw;
-      save(); /* write forward into the versioned format once */
-    }());
-
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (pop.hidden) openPopover(); else closePopover();
+    });
+    closeBtn.addEventListener('click', closePopover);
+    document.addEventListener('click', function (e) {
+      if (!pop.hidden && !pop.contains(e.target) && e.target !== btn) closePopover();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !pop.hidden) closePopover();
+    });
   }());
 
+
   /* ================================================
-     TEAM ACTIONS — manual registry. Source data comes from
-     the global TEAM_ACTIONS_DATA (team-actions-data.js), which
-     Thomas edits directly and this page never writes back to.
-     Only "dismissed" state lives in localStorage, keyed by each
-     entry's stable id, so a dismissal persists locally without
-     ever touching the data file.
+     INBOX LINKS — data-driven feed of recent Team Inbox / Owners Inbox
+     drops, 2026-08-14 (Mia Chen), ported from
+     wireframes\inbox-links-wireframe-2026-08-14-v4.html, David-approved.
+
+     Data source: inbox-links-data.js (loaded above via <script src>),
+     which defines INBOX_LINKS_DATA — an array of
+     { id, filename, source: "Team Inbox"|"Owners Inbox", fileType,
+       dateReceived, context, projectTag: string|null, path }
+     generated by Marcus Webb from a live scan of Team Inbox/Owners Inbox
+     cross-referenced against pka.db. `path` is a bonus field beyond the
+     originally-documented schema — a ready-to-use relative href (already
+     URL-encoded, relative to this file) — used directly for the filename
+     link below rather than reconstructed.
+
+     Falls back to an empty list (not fake sample data) if the script
+     failed to load or the global is missing/malformed, so the section
+     degrades to its empty state instead of throwing.
+
+     Mark-as-read persistence: localStorage key `pka_inbox_links_dismissed`
+     — a JSON array of dismissed ids — same pattern as Team Actions used
+     for `pka_team_actions_dismissed`. Dismissed items aren't deleted, just
+     moved into the "Recently archived" panel; restoring removes them from
+     the dismissed set again.
   ================================================ */
   (function () {
-    'use strict';
-
-    var LS_KEY = 'pka_team_actions_dismissed';
-    var list = document.getElementById('ta-list');
-    if (!list) return;
-
-    var DATA = (typeof TEAM_ACTIONS_DATA !== 'undefined' && Array.isArray(TEAM_ACTIONS_DATA))
-      ? TEAM_ACTIONS_DATA
+    var rawItems = (typeof INBOX_LINKS_DATA !== 'undefined' && Array.isArray(INBOX_LINKS_DATA))
+      ? INBOX_LINKS_DATA
       : [];
 
-    function esc(s) {
-      return String(s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+    var DISMISSED_KEY = 'pka_inbox_links_dismissed';
 
-    /* 'YYYY-MM-DD' -> '4 Jul 2026'. Falls back to the raw string if it
-       doesn't parse, rather than showing "Invalid Date" or throwing. */
-    function formatDate(iso) {
-      if (!iso) return '';
-      var parts = String(iso).split('-');
-      if (parts.length !== 3) return String(iso);
-      var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
-      if (isNaN(d.getTime())) return String(iso);
-      var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return d.getUTCDate() + ' ' + months[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
-    }
-
-    function formatAmount(n) {
-      if (typeof n !== 'number' || isNaN(n)) return '';
-      return '£' + n.toFixed(2);
-    }
-
-    function getDismissed() {
+    function loadDismissed() {
       try {
-        var raw = localStorage.getItem(LS_KEY);
-        if (raw) return JSON.parse(raw);
+        var raw = localStorage.getItem(DISMISSED_KEY);
+        var arr = raw ? JSON.parse(raw) : [];
+        var set = {};
+        arr.forEach(function (id) { set[id] = true; });
+        return set;
+      } catch (e) { return {}; }
+    }
+    function saveDismissed(set) {
+      try {
+        localStorage.setItem(DISMISSED_KEY, JSON.stringify(Object.keys(set)));
       } catch (e) {}
-      return [];
     }
 
-    function saveDismissed(ids) {
-      try { localStorage.setItem(LS_KEY, JSON.stringify(ids)); } catch (e) {}
-      /* Best-effort cross-device push (2026-07-13) — see PkaSync above.
-         Fire-and-forget, never blocks the dismiss action itself. */
-      PkaSync.push(LS_KEY, ids);
+    var listEl          = document.getElementById('il-list');
+    var emptyEl          = document.getElementById('il-empty');
+    var archiveAreaEl    = document.getElementById('il-archive-area');
+    var archiveToggleBtn = document.getElementById('il-archive-toggle');
+    var archiveCountEl   = document.getElementById('il-archive-count');
+    var countPillEl      = document.getElementById('il-count-pill');
+    var markAllBtn       = document.getElementById('il-mark-all');
+    var filterBarEl      = document.getElementById('il-filter-bar');
+    var projectGroupEl   = document.getElementById('il-project-filter-group');
+    var filterSepEl      = document.getElementById('il-filter-sep');
+
+    if (!listEl) return; // section not present — nothing to wire up
+
+    var dismissedIds   = loadDismissed();
+    var currentSource  = 'all';
+    var currentProject = null;
+
+    /* Project chips are built from whatever distinct projectTag values are
+       actually present in the loaded data, sorted alphabetically — not
+       hardcoded, so a newly-tagged project just appears with no markup
+       change needed. If nothing is tagged yet, the whole project-chip row
+       (and its separator) stays hidden rather than showing an empty row. */
+    var projectTags = [];
+    (function () {
+      var seen = {};
+      rawItems.forEach(function (item) {
+        if (item.projectTag && !seen[item.projectTag]) {
+          seen[item.projectTag] = true;
+          projectTags.push(item.projectTag);
+        }
+      });
+      projectTags.sort();
+    }());
+
+    if (projectTags.length && projectGroupEl) {
+      projectGroupEl.innerHTML = projectTags.map(function (tag) {
+        return '<button class="il-filter-chip il-filter-chip--project" data-project="' + tag + '" type="button">' + tag + '</button>';
+      }).join('');
+      if (filterSepEl) filterSepEl.hidden = false;
     }
 
-    var dismissed = getDismissed();
-    if (!Array.isArray(dismissed)) dismissed = [];
+    function sourceBadgeClass(src) {
+      return src === 'Team Inbox' ? 'src-team' : 'src-owners';
+    }
+    function projectTagHtml(item) {
+      return item.projectTag ? '<span class="il-project-tag">' + item.projectTag + '</span>' : '';
+    }
+    function filenameHtml(item) {
+      return item.path
+        ? '<a class="il-filename" href="' + item.path + '" target="_blank" rel="noopener noreferrer">' + item.filename + '</a>'
+        : '<span class="il-filename">' + item.filename + '</span>';
+    }
+    function metaText(item, prefix) {
+      return (prefix || 'Dropped ') + item.dateReceived;
+    }
 
-    /* Prune dismissed ids that no longer correspond to any entry
-       (the entry was removed from the data file) — keeps this
-       localStorage key from growing forever. */
-    var dataIds = DATA.map(function (a) { return a && a.id; });
-    var pruned = dismissed.filter(function (id) { return dataIds.indexOf(id) !== -1; });
-    if (pruned.length !== dismissed.length) {
-      dismissed = pruned;
-      saveDismissed(dismissed);
+    function makeActiveRow(item) {
+      var row = document.createElement('div');
+      row.className = 'il-row';
+      row.dataset.id = item.id;
+      row.innerHTML =
+        '<div class="il-info">' +
+          '<div class="il-badges">' +
+            '<span class="il-source-badge ' + sourceBadgeClass(item.source) + '">' + item.source + '</span>' +
+            (item.fileType ? '<span class="il-ext-chip">' + item.fileType + '</span>' : '') +
+            projectTagHtml(item) +
+          '</div>' +
+          filenameHtml(item) +
+          '<span class="il-context">' + item.context + '</span>' +
+          '<span class="il-meta">' + metaText(item) + '</span>' +
+        '</div>' +
+        '<button class="il-mark-read" type="button">&#10003; Mark as read</button>';
+      row.querySelector('.il-mark-read').addEventListener('click', function () {
+        row.classList.add('il-leaving');
+        setTimeout(function () {
+          dismissedIds[item.id] = true;
+          saveDismissed(dismissedIds);
+          render();
+        }, 220);
+      });
+      return row;
+    }
+
+    function makeArchivedRow(item) {
+      var row = document.createElement('div');
+      row.className = 'il-row il-archived';
+      row.dataset.id = item.id;
+      row.innerHTML =
+        '<div class="il-info">' +
+          '<div class="il-badges">' +
+            '<span class="il-source-badge ' + sourceBadgeClass(item.source) + '">' + item.source + '</span>' +
+            (item.fileType ? '<span class="il-ext-chip">' + item.fileType + '</span>' : '') +
+            projectTagHtml(item) +
+          '</div>' +
+          filenameHtml(item) +
+          '<span class="il-context">' + item.context + '</span>' +
+          '<span class="il-meta">' + metaText(item, 'Read &middot; ') + '</span>' +
+        '</div>' +
+        '<button class="il-restore" type="button">&#8630; Restore</button>';
+      row.querySelector('.il-restore').addEventListener('click', function () {
+        delete dismissedIds[item.id];
+        saveDismissed(dismissedIds);
+        render();
+      });
+      return row;
+    }
+
+    function matchesFilter(item) {
+      var sourceOk = currentSource === 'all' || item.source === currentSource;
+      var projectOk = !currentProject || item.projectTag === currentProject;
+      return sourceOk && projectOk;
     }
 
     function render() {
-      var visible = DATA.filter(function (a) {
-        return a && a.id && dismissed.indexOf(a.id) === -1;
-      });
+      var active = rawItems.filter(function (i) { return !dismissedIds[i.id]; });
+      var archived = rawItems.filter(function (i) { return dismissedIds[i.id]; });
 
-      if (!visible.length) {
-        list.innerHTML = '<span class="ta-empty">Nothing outstanding right now.</span>';
-        return;
+      var visibleActive = active.filter(matchesFilter);
+
+      listEl.innerHTML = '';
+      visibleActive.forEach(function (item) { listEl.appendChild(makeActiveRow(item)); });
+
+      emptyEl.hidden = visibleActive.length !== 0;
+
+      if (countPillEl) {
+        countPillEl.textContent = active.length + (active.length === 1 ? ' new' : ' new');
+        countPillEl.style.display = active.length === 0 ? 'none' : '';
       }
 
-      list.innerHTML = visible.map(function (a) {
-        var sourceHtml = '';
-        if (a.source && a.link) {
-          sourceHtml = '<a class="ta-row-source" href="' + esc(a.link) + '" target="_blank" rel="noopener noreferrer">' + esc(a.source) + ' &#8599;</a>';
-        } else if (a.source) {
-          sourceHtml = '<span class="ta-row-source">' + esc(a.source) + '</span>';
+      if (archiveCountEl) archiveCountEl.textContent = archived.length;
+      if (archiveAreaEl) {
+        archiveAreaEl.innerHTML = '';
+        archived.filter(matchesFilter).forEach(function (item) { archiveAreaEl.appendChild(makeArchivedRow(item)); });
+      }
+    }
+
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', function () {
+        rawItems.forEach(function (i) { dismissedIds[i.id] = true; });
+        saveDismissed(dismissedIds);
+        render();
+      });
+    }
+
+    if (archiveToggleBtn) {
+      archiveToggleBtn.addEventListener('click', function () {
+        var expanded = archiveToggleBtn.getAttribute('aria-expanded') === 'true';
+        archiveToggleBtn.setAttribute('aria-expanded', String(!expanded));
+        archiveAreaEl.hidden = expanded;
+        archiveAreaEl.setAttribute('aria-hidden', String(expanded));
+      });
+    }
+
+    if (filterBarEl) {
+      filterBarEl.addEventListener('click', function (e) {
+        var sourceBtn = e.target.closest('[data-filter]');
+        if (sourceBtn) {
+          filterBarEl.querySelectorAll('[data-group="source"] .il-filter-chip').forEach(function (c) { c.classList.remove('active'); });
+          sourceBtn.classList.add('active');
+          currentSource = sourceBtn.dataset.filter;
+          render();
+          return;
         }
-
-        var isPayable = a.type === 'payable';
-        var payableBadgeHtml = isPayable ? '<span class="ta-payable-badge">Payable</span>' : '';
-        var payableInfoHtml = '';
-        if (isPayable) {
-          var bits = [];
-          if (typeof a.amount === 'number') {
-            bits.push('<span class="ta-row-payable-amount">' + esc(formatAmount(a.amount)) + '</span>');
-          }
-          if (a.invoiceDate) {
-            bits.push('<span>Invoiced ' + esc(formatDate(a.invoiceDate)) + '</span>');
-          }
-          if (a.dueDate) {
-            bits.push('<span>Due ' + esc(formatDate(a.dueDate)) + '</span>');
-          }
-          if (bits.length) {
-            payableInfoHtml = '<div class="ta-row-payable-info">'
-              + bits.join('<span class="ta-row-payable-sep" aria-hidden="true">&middot;</span>')
-              + '</div>';
-          }
-        }
-
-        return '<div class="ta-row' + (isPayable ? ' ta-row--payable' : '') + '" data-id="' + esc(a.id) + '">'
-          + '<div class="ta-row-main">'
-          + payableBadgeHtml
-          + '<span class="ta-row-text">' + esc(a.text || '') + '</span>'
-          + payableInfoHtml
-          + sourceHtml
-          + '</div>'
-          + '<button class="ta-dismiss" data-id="' + esc(a.id) + '" title="Dismiss">&#10005;</button>'
-          + '</div>';
-      }).join('');
-
-      list.querySelectorAll('.ta-dismiss').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var id = btn.dataset.id;
-          if (dismissed.indexOf(id) === -1) {
-            dismissed.push(id);
-            saveDismissed(dismissed);
+        var projectBtn = e.target.closest('[data-project]');
+        if (projectBtn) {
+          var already = projectBtn.classList.contains('active');
+          filterBarEl.querySelectorAll('[data-group="project"] .il-filter-chip').forEach(function (c) { c.classList.remove('active'); });
+          if (!already) {
+            projectBtn.classList.add('active');
+            currentProject = projectBtn.dataset.project;
+          } else {
+            currentProject = null;
           }
           render();
-        });
+        }
       });
     }
 
     render();
-
-    /* ---- Cross-device sync bootstrap (2026-07-13) ----
-       Same deferred-after-first-render pattern as Bookmarks above.
-       One deliberate difference: dismissed-ids use a UNION merge, not
-       a plain overwrite. A dismissal is a one-way, add-only action
-       (there's no "un-dismiss" control in this UI) — if David
-       dismisses item A on the PC and item B on the laptop before
-       either device has synced, a plain last-write-wins overwrite
-       would silently make one of those items reappear, which reads as
-       a bug even though nothing is technically "wrong". Union avoids
-       that regression and is no more complex to write than an
-       overwrite would have been. */
-    PkaSync.pull(LS_KEY).then(function (result) {
-      if (!result) return; /* sync unavailable this session — localStorage stands as-is */
-
-      if (result.value === null) {
-        PkaSync.push(LS_KEY, dismissed);
-        return;
-      }
-
-      if (!Array.isArray(result.value)) {
-        console.warn('PkaSync: remote dismissed-state value has an unrecognised shape — ignoring it, keeping local state.', result.value);
-        return;
-      }
-
-      var merged = dismissed.slice();
-      result.value.forEach(function (id) {
-        if (typeof id === 'string' && merged.indexOf(id) === -1) merged.push(id);
-      });
-
-      /* Re-apply the same existing prune (drop ids for entries no
-         longer in TEAM_ACTIONS_DATA) to the merged set. */
-      merged = merged.filter(function (id) { return dataIds.indexOf(id) !== -1; });
-
-      if (merged.length === dismissed.length && merged.every(function (id) { return dismissed.indexOf(id) !== -1; })) {
-        return; /* already in sync, nothing to do */
-      }
-
-      dismissed = merged;
-      saveDismissed(dismissed); /* also re-pushes the merged (possibly wider) set, keeping the Sheet current */
-      render();
-    });
-
   }());
 
   /* ================================================
-     PROJECT BUILDS
+     PROJECT BUILDS — links hub (properly built out 2026-08-01,
+     per the narrowed dashboard scope agreed 2026-07-29). This
+     used to be status-only (name/desc/badge + an Obsidian-log
+     link) — now the build's own name links straight through to
+     the live build itself, when one exists, so this genuinely
+     works as a links hub and not just a status list. `link` is
+     OPTIONAL and omitted (never guessed) for builds with no
+     durable live destination yet (e.g. still on hold, or a local
+     dev environment with nothing to click through to). Checked
+     against Claude/Project Builds/ in the Obsidian vault
+     2026-08-01 for current status.
   ================================================ */
   var PROJECT_BUILDS = [
-    { name: 'PKA Dashboard', desc: 'Internal command centre. Vivid theme (re-skinned 2026-07-14).',            status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'Book Production Hub', desc: 'Re-platformed Headpress Hub on Google Sheets + GitHub Pages, cross-device. Combines PO tracker, print estimates, Book Bible, Book Planner, ISBN pool. Supersedes Headpress Hub (2026-06-29 local-file build).', status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'WriteApp',      desc: 'Distraction-free writing tool. v1 complete; iteration ongoing.',          status: 'active' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'Web Portfolio', desc: 'Personal website and professional portfolio.',                             status: 'inbuild' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'PARA',         desc: 'Personal and business file organisation system. OneDrive, external HDDs, and local drives.', status: 'inbuild' }
-    /* PARA: no obsidianLog — no corresponding file in Claude/Project Builds/,
-       omitted rather than guessed (per 2026-07-11 brief). */
+    { name: 'Book Production Hub', desc: 'Re-platformed Headpress Hub on Google Sheets + GitHub Pages, cross-device. Combines PO tracker, print estimates, Book Bible, Book Planner, ISBN pool. Supersedes Headpress Hub (2026-06-29 local-file build).', status: 'active',
+      link: 'https://netherleys.github.io/book-production-hub/' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'WriteApp',      desc: 'Distraction-free writing tool. v1 complete; iteration ongoing.',          status: 'active',
+      link: '../../WriteApp/writer.html' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'Web Portfolio', desc: 'David\u2019s personal author/portfolio site (davidkerekes.com). First-pass 5-page structure live locally, brand system in Elementor Global Colors/Fonts.', status: 'inbuild',
+      link: 'http://localhost:8080' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
+    { name: 'PARA',         desc: 'Personal and business file organisation system. OneDrive, external HDDs, and local drives.', status: 'hold' }
+    /* PARA: on hold at David's own request since 2026-07-03 — skeleton
+       built, not chased further until he brings it up. No obsidianLog
+       (no corresponding file in Claude/Project Builds/) and no live
+       link — nothing to point to yet, omitted rather than guessed. */
   ];
+  /* PKA Dashboard itself deliberately isn't listed here — it IS this
+     page, a self-referential "open the page you're already on" tile
+     wouldn't add anything. Its own Obsidian log stays reachable the
+     normal way (Bookmarks isn't right for it either; David can ask
+     Thomas/Mia directly, same as before this rebuild). */
 
   (function () {
-    var BADGE_LABEL = { inbuild: 'In Build', active: 'Active' };
+    var BADGE_LABEL = { inbuild: 'In Build', active: 'Active', hold: 'On Hold', planned: 'Planned' };
     var list = document.getElementById('builds-list');
     if (!list) return;
     list.innerHTML = PROJECT_BUILDS.map(function (p) {
+      var nameHtml = p.link
+        ? '<a class="build-name build-name-link" href="' + p.link + '" target="_blank" rel="noopener noreferrer">' + p.name + ' &#8599;</a>'
+        : '<span class="build-name">' + p.name + '</span>';
       var logHtml = p.obsidianLog
         ? '<a class="build-obsidian-link" href="' + p.obsidianLog + '" target="_blank" rel="noopener noreferrer">Obsidian log &#8599;</a>'
         : '';
       return '<div class="build-row">'
         + '<div class="build-info">'
-        + '<span class="build-name">' + p.name + '</span>'
+        + nameHtml
         + '<span class="build-desc">' + p.desc + '</span>'
         + logHtml
         + '</div>'
@@ -3045,6 +3930,18 @@
         'Virginia Department of Taxation expertise',
         'Non-US publisher &amp; distributor compliance'
       ]
+    },
+    {
+      key: 'priya', name: 'Priya Vance', role: 'Submissions &amp; Rights Strategist (Fiction &amp; Nonfiction)',
+      photo: 'Priya Vance.jpg', file: 'PRIYA_VANCE.md',
+      persona: '&ldquo;Warm toward the writer, cold toward the material &mdash; she can tell David a manuscript is genuinely good and not sellable as positioned, in the same breath, and both halves are true.&rdquo;',
+      skills: [
+        'Query letters, pitch decks &amp; dual-register synopsis writing',
+        'Nonfiction proposal architecture &amp; author-platform packaging',
+        'Comp-title research &amp; market/genre positioning (fiction &amp; nonfiction)',
+        'Submission-target research, list-building &amp; tracking',
+        'Rights literacy (advisory only) &mdash; never negotiates terms herself'
+      ]
     }
   ];
 
@@ -3054,10 +3951,16 @@
 
     function encodePath(s) { return encodeURIComponent(s).replace(/%2F/g, '/'); }
 
-    grid.innerHTML = TEAM_MEMBERS.map(function (m) {
+    /* Cycled onto each card's corner-shape decoration — purely visual,
+       see .corner-shape in the round-2 reskin styles. */
+    var SHAPES = ['circle', 'ring', 'triangle', 'star'];
+
+    grid.innerHTML = TEAM_MEMBERS.map(function (m, i) {
       var photoUrl = '../../Team/' + encodePath(m.photo);
       var fileUrl  = '../../Team/' + encodePath(m.file);
+      var shape    = SHAPES[i % SHAPES.length];
       return '<article class="team-card" aria-label="' + m.name + ', ' + m.role.replace(/<[^>]+>/g, '') + '">'
+        + '<span class="corner-shape shape-' + shape + '" aria-hidden="true"></span>'
         + '<div class="card-accordion-header">'
         + '<div class="card-identity">'
         + '<div class="card-avatar-wrap">'
@@ -3112,10 +4015,20 @@
     var navItems = Array.prototype.slice.call(document.querySelectorAll('.dash-nav-item'));
     if (!navItems.length || !('IntersectionObserver' in window)) return;
 
+    /* Guard added 2026-08-14 (Mia Chen) — the "Notes" popover button shares
+       .dash-nav-item styling but is a <button> with no href (it's not an
+       anchor jump), so a bare .getAttribute('href').slice(1) threw here on
+       every load pre-existing this fix, silently breaking scroll-highlight
+       for every nav item, not just Notes. Pre-existing bug, noticed while
+       verifying the new Inbox Links nav item; fixed in passing since it's
+       one line from code this task already touches. */
     var navById = {};
-    navItems.forEach(function (a) { navById[a.getAttribute('href').slice(1)] = a; });
+    navItems.forEach(function (a) {
+      var href = a.getAttribute('href');
+      if (href) navById[href.slice(1)] = a;
+    });
 
-    var sections = ['sec-bookmarks', 'sec-navlinks', 'sec-actions', 'sec-builds', 'sec-portfolio']
+    var sections = ['sec-bookmarks', 'sec-inbox-links', 'sec-builds', 'sec-portfolio']
       .map(function (id) { return document.getElementById(id); })
       .filter(Boolean);
     if (!sections.length) return;
