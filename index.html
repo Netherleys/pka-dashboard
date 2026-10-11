@@ -7,6 +7,10 @@
   <meta name="robots" content="noindex, nofollow">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4B6E53">
+  <style>/* public mirror: local-only sections hidden */
+    .dashboard-columns, #sec-inbox-links, #sec-builds, #sec-portfolio, #sec-glance, #sec-deadlines,
+    .glance-section, .nav-health { display: none !important; }
+  </style>
   <!-- No-op favicon: with no <link rel="icon"> declared, Chrome's implicit
        favicon auto-discovery on file:// origins can misresolve to the
        page's own URL and attempt to (re)load it as a sub-resource, which
@@ -595,6 +599,18 @@
       color: rgba(255, 255, 255, 0.85);
     }
 
+    /* Tag pills (added 2026-08-23, Mia Chen) need the same light-on-fill
+       treatment as the text above once their row sits on an open/pinned
+       card's saturated --cat background — otherwise the resting-state
+       tinted-accent pill (built for a plain --bg-card background) reads
+       as low-contrast on top of that fill. */
+    #bm-visible .bm-accordion-item.open .bm-tag-pill,
+    #bm-pinned .bm-accordion-item .bm-tag-pill {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.4);
+      color: #fff;
+    }
+
     /* Round 3 fix (2026-08-01) — chip controls (edit/pin/move/delete) were
        still using their resting-state colours (dark muted green / dark
        rust at low opacity, tuned for the plain white .bm-panel-inner
@@ -663,20 +679,31 @@
       padding-top: 0.4rem;
     }
 
-    /* Individual row */
+    /* Individual row (2026-08-23, Mia Chen — revised same day per David:
+       tags sit INLINE with the link on the same row, not on a row of
+       their own underneath — see .bm-tag-pill below. .bm-chip-main
+       wraps onto a second line only when name/note + tags + controls
+       genuinely don't fit; untagged bookmarks (the common case, tags are
+       opt-in) render with no tag pills in the row at all and look
+       identical to before this feature existed. */
     .bm-chip {
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
       border-radius: 4px;
-      padding: 0 0.35rem;
       transition: background 0.14s ease;
     }
 
     .bm-chip:hover {
       background: rgba(var(--accent-rgb), 0.16);
+    }
+
+    .bm-chip-main {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      row-gap: 0.25rem;
+      column-gap: 0.5rem;
+      padding: 0 0.35rem;
+      min-width: 0;
     }
 
     .bm-chip-link {
@@ -688,7 +715,20 @@
       font-size: 0.92rem;
       padding: 0.36rem 0;
       min-width: 0;
-      flex: 1;
+      /* flex: 0 1 auto (fixed 2026-08-23, after a real narrow-width test
+         caught a bug here) — an explicit small flex-basis like `1 1 120px`
+         lies to the line-wrapping algorithm about how much room this item
+         actually needs: the name inside never shrinks (flex-shrink:0, see
+         .bm-chip-name) below its own text width, so once real content was
+         wider than that made-up 120px figure, it just overflowed past its
+         box and visually collided with the tag pills instead of properly
+         pushing them to a new line. `auto` basis uses the item's real
+         (now well-bounded — see .bm-chip-note's max-width) content size,
+         so wrap decisions are accurate. flex-grow:0 because this item no
+         longer needs to stretch and "claim" leftover row space — tags sit
+         right after it as their own flex items, and .bm-chip-controls
+         pins itself to the row end via margin-left:auto regardless. */
+      flex: 0 1 auto;
       transition: color 0.14s ease;
     }
 
@@ -716,8 +756,17 @@
       line-height: 1;
     }
 
-    /* Optional freeform note — muted, secondary to the link name, fills
-       the row's remaining horizontal space and truncates if too long */
+    /* Optional freeform note — muted, secondary to the link name. Fixed
+       2026-08-23 (alongside the .bm-chip-link fix above): used to be
+       `flex: 1`, growing to eat whatever space was left in the row and
+       ellipsis-truncating there — fine on its own, but once tags/
+       controls became siblings in the same wrappable row, that made
+       .bm-chip-link's own size (and therefore the outer row's wrap
+       decision) depend on runtime leftover space instead of being a
+       predictable value, which is what caused the overlap bug. A fixed
+       max-width makes note's own truncation point deterministic and
+       .bm-chip-link's content-based size accurate, independent of
+       siblings. */
     .bm-chip-note {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -725,15 +774,50 @@
       font-size: 0.8rem;
       font-style: italic;
       color: var(--text-muted);
-      flex: 1;
+      max-width: 200px;
       min-width: 0;
     }
 
-    /* Hover controls */
+    /* Tags (added 2026-08-23, Mia Chen; revised same day per David to sit
+       INLINE with the link rather than on a row underneath) — each pill
+       is its OWN direct flex item of .bm-chip-main, a sibling of
+       .bm-chip-link, only rendered when a bookmark actually has tags
+       (see chipHtml/tagPillsHtml in the Bookmarks script).
+
+       Deliberately NOT grouped inside a wrapping `.bm-chip-tags`
+       container: a flex-shrink:0 group like that gets sized to fit ALL
+       its pills on one row (max-content) before .bm-chip-main's own
+       flex-wrap ever gets a say, so with several tags on a narrow card
+       the whole group just overflowed past the card edge instead of
+       wrapping — caught testing at a real narrow (~320px single-column)
+       width, not visible at the wider widths tried first. Making each
+       pill its own flex item lets .bm-chip-main's flex-wrap place them
+       individually, wrapping pill-by-pill exactly where they run out of
+       room. */
+    .bm-tag-pill {
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: rgba(var(--accent-rgb), 0.1);
+      border: 1px solid rgba(var(--accent-rgb), 0.28);
+      border-radius: 999px;
+      padding: 0.08rem 0.55rem;
+      color: var(--accent);
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    /* Hover controls — margin-left: auto keeps this pinned to the end of
+       whichever flex line it lands on (normally the same line as the
+       link/tags; its own line only in the rare case where a long name +
+       several tags already filled the row). */
     .bm-chip-controls {
       display: flex;
       align-items: center;
       gap: 0.05rem;
+      margin-left: auto;
       opacity: 0;
       transition: opacity 0.14s ease;
       flex-shrink: 0;
@@ -858,6 +942,138 @@
       color: var(--text-muted);
       opacity: 0.75;
     }
+
+    /* "Other Bookmarks" (renamed from "Behind the scenes", 2026-08-23,
+       Mia Chen) — 2-column layout, matching request. This list has no
+       categories of its own (see chipHtml's `categorized` flag), so
+       unlike .bm-visible-area (which columns across separate accordion
+       cards) this columns the flat .bm-chips list directly — same
+       `column-count` technique, scoped to #bm-hidden only so every other
+       category's chip list (still a plain single-column flex list inside
+       its own accordion panel) is untouched. break-inside: avoid keeps
+       a chip's main row + tag row together rather than splitting across
+       the column break. */
+    #bm-hidden .bm-chips {
+      display: block;
+      column-count: 2;
+      column-gap: 1.1rem;
+    }
+    #bm-hidden .bm-chip {
+      break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+    }
+    @media (max-width: 700px) {
+      #bm-hidden .bm-chips { column-count: 1; }
+    }
+
+    /* =============================================
+       TAG FILTER BAR (added 2026-08-23, Mia Chen) — lets David search or
+       click through tags across ALL bookmarks (visible + hidden, any
+       category) instead of hunting category-by-category as the list
+       grows. Reuses the Inbox Links filter-chip visual language
+       (.il-filter-chip) under a bm- prefix, per this file's existing
+       convention of each section keeping its own prefixed classes even
+       when the look is shared.
+    ============================================== */
+    .bm-tag-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 0.9rem 0 1.1rem;
+    }
+
+    .bm-tag-search {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      background: var(--bg-card);
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.32rem 0.9rem;
+      color: var(--text-primary);
+      min-width: 190px;
+    }
+    .bm-tag-search::placeholder { color: var(--text-muted); }
+    .bm-tag-search:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .bm-tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .bm-tag-chip {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: var(--bg-card);
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.22rem 0.7rem;
+      cursor: pointer;
+      color: var(--text-primary);
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .bm-tag-chip.active { background: var(--border-card); color: #fff; }
+    .bm-tag-chip:not(.active):hover { background: var(--bg-card-hover); }
+
+    /* Filtered-results panel — swaps in for .bm-layout/.bm-toggle-bar
+       while a tag filter is active (see applyTagFilter in the Bookmarks
+       script), rather than trying to filter the accordion in place,
+       which would fight the "one category open at a time" interaction.
+       Card chrome matches the general accordion-panel tone
+       (.bm-accordion-panel's --panel-bg) so it reads as "part of
+       Bookmarks", not a separate feature bolted on. */
+    .bm-tag-filter-results {
+      margin: 0.9rem 0 1.1rem;
+      padding: 1rem 1.1rem;
+      background: var(--panel-bg);
+      border: 2.5px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    .bm-tag-filter-results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(var(--panel-divider-rgb), 0.35);
+    }
+
+    .bm-tag-filter-results-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    /* Ghost button — cloned from .il-ghost-btn (same visual language,
+       bm- prefixed per this file's per-section-class convention).
+       Reused for both "Export Bookmarks" (section header) and
+       "Clear filter" (tag results header). */
+    .bm-ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: none;
+      border: 2px solid var(--border-card);
+      border-radius: 999px;
+      padding: 0.2rem 0.75rem;
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.14s ease, color 0.14s ease;
+    }
+    .bm-ghost-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 
     /* =============================================
@@ -1411,6 +1627,27 @@
     }
     .il-mark-read:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+    /* Mark-as-read → note status (native host), added 2026-10-11, Marcus Webb.
+       States per the David-approved mockup _mockups/dashboard-mark-read-native-host-mockup-2026-10-11.html.
+       Colours reuse Mia Chen's 10-10 mockup tokens (ok / warn / danger). */
+    .il-mark-read[disabled] { opacity: 0.6; cursor: progress; }
+    .il-spin {
+      width: 0.8rem; height: 0.8rem; border: 2px solid currentColor; border-right-color: transparent;
+      border-radius: 50%; animation: il-spin 0.7s linear infinite;
+    }
+    @keyframes il-spin { to { transform: rotate(360deg); } }
+    .il-status-msg { font-size: 0.78rem; line-height: 1.4; display: none; }
+    .il-status-msg a, .il-status-msg button.il-linkish {
+      color: inherit; font-weight: 700; background: none; border: 0; padding: 0; cursor: pointer;
+      font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .il-row.st-ok        { background: rgba(79, 155, 114, 0.10); }
+    .il-row.st-ok .il-status-msg        { display: block; color: #3E7F5B; }
+    .il-row.st-locked    { background: rgba(201, 138, 46, 0.12); }
+    .il-row.st-locked .il-status-msg    { display: block; color: #9A6514; }
+    .il-row.st-nostatus, .il-row.st-nohost { background: rgba(var(--danger-rgb, 163, 68, 48), 0.08); }
+    .il-row.st-nostatus .il-status-msg, .il-row.st-nohost .il-status-msg { display: block; color: var(--danger, #A34430); }
+
     .il-archive-toggle-bar { margin-top: 1.25rem; }
     .il-archive-toggle-btn {
       background: none; border: none;
@@ -1436,6 +1673,73 @@
     .il-empty {
       font-size: 0.85rem; color: var(--text-muted); font-style: italic;
       padding: 1.5rem 0; text-align: center;
+    }
+
+    /* Turnaround Remittance Advice structured breakdown, added 2026-09-06.
+       `.il-item-wrap` groups a row + its (optional) breakdown panel as one
+       visual unit so the archive/filter logic (which only ever knows about
+       "the row") doesn't need to change — it just appends whatever
+       makeActiveRow/makeArchivedRow returns, row or wrap, to the list. */
+    .il-item-wrap { display: flex; flex-direction: column; }
+
+    .il-remittance-strip {
+      font-size: 0.8rem; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .il-remittance-strip strong { color: var(--text-primary); }
+
+    .il-breakdown-toggle {
+      flex-shrink: 0; background: none; border: 1.5px solid var(--border-card);
+      border-radius: 999px; padding: 0.15em 0.7em;
+      font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700;
+      color: var(--accent); cursor: pointer; white-space: nowrap;
+      transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+    }
+    .il-breakdown-toggle:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .il-breakdown-panel {
+      margin-top: -0.65rem;
+      background: var(--bg-card-hover);
+      border: 2.5px solid var(--border-card);
+      border-top: none;
+      border-radius: 0 0 var(--radius-card) var(--radius-card);
+      padding: 0.7rem 1.1rem 0.9rem;
+    }
+    .il-breakdown-panel[hidden] { display: none; }
+
+    .il-breakdown-summary {
+      display: flex; gap: 1.25rem; flex-wrap: wrap;
+      font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.55rem;
+    }
+    .il-breakdown-summary strong { color: var(--text-primary); }
+
+    .il-breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .il-breakdown-table th {
+      text-align: left; font-family: var(--font-sans); font-size: 0.66rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); padding: 0.2rem 0.5rem 0.35rem;
+      border-bottom: 1.5px solid var(--border-card);
+    }
+    .il-breakdown-table td {
+      font-family: var(--font-mono); padding: 0.3rem 0.5rem;
+      border-bottom: 1px solid rgba(var(--accent-rgb), 0.15);
+      color: var(--text-secondary);
+    }
+    .il-breakdown-table tr:last-child td { border-bottom: none; }
+    .il-breakdown-amt { text-align: right; font-weight: 700; }
+    .il-breakdown-amt.type-deduction { color: var(--text-primary); }
+    .il-breakdown-amt.type-credit { color: var(--accent); }
+    .il-breakdown-type {
+      font-size: 0.62rem; font-family: var(--font-sans); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+      margin-left: 0.4em;
+    }
+
+    .il-breakdown-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+
+    .il-breakdown-warning {
+      margin-top: 0.6rem; font-size: 0.76rem; color: var(--danger);
+      display: flex; gap: 0.4em; align-items: flex-start; line-height: 1.4;
     }
 
     /* Inside the half-width column, a row's filename + button can get snug
@@ -1563,6 +1867,33 @@
       background: var(--build-planned);
       color: #fff;
       border: 1px solid var(--build-planned);
+    }
+
+    /* Archived (status: 'active' / "effectively completed" per David
+       2026-08-16) builds — nested collapsed-by-default sub-list inside
+       the same #sec-builds card, mirroring the Inbox Links
+       .il-archive-toggle-btn / .il-archive-area pattern rather than
+       inventing new toggle mechanics. */
+    .builds-archive-toggle-bar { margin-top: 1.1rem; }
+    .builds-archive-toggle-btn {
+      background: none; border: none;
+      font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700;
+      color: var(--text-secondary); cursor: pointer; padding: 0.35rem 0;
+    }
+    .builds-archive-toggle-btn:hover { color: var(--accent); }
+
+    .builds-archive-area {
+      margin-top: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .builds-archive-area[hidden] { display: none; }
+
+    .build-row.build-row--archived {
+      box-shadow: none;
+      border-style: dashed;
+      opacity: 0.78;
     }
 
 
@@ -1948,6 +2279,203 @@
       }
     }
 
+
+    /* =============================================
+       AT A GLANCE — counters (#4) + system health (#3), added 2026-10-11
+       (Mia Chen), from the David-approved mockup
+       _mockups/dashboard-live-updates-mockup-2026-10-10.html.
+       Data: glance-data.js (window.PKA_GLANCE, Marcus Webb's session-start
+       generator). Missing or >36h old = muted "not refreshed" state.
+       Health colours: ok/warn reuse the mockup tokens, bad = --danger.
+    ============================================== */
+    :root {
+      --gl-ok: #4F9B72;
+      --gl-warn: #C98A2E;
+      --gl-warn-rgb: 201, 138, 46;
+      --gl-warn-ink: #8A5A12;
+      --gl-idle: #9A958A;
+    }
+    #sec-glance { scroll-margin-top: calc(var(--nav-height) + 14px); }
+    .glance-section { margin-bottom: 2.25rem; }
+    .glance-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 1.25rem 2.5rem;
+      align-items: start;
+    }
+    .gl-card {
+      background: var(--bg-card);
+      border: 2.5px solid var(--border-card);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 0.95rem 1.1rem 1rem;
+    }
+    .gl-card-title {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--text-primary); margin-bottom: 0.75rem;
+    }
+    .gl-card-title small {
+      font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--text-muted);
+    }
+    .gl-card-title small.is-bad { color: var(--danger); font-weight: 700; }
+
+    .gl-counters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; }
+    .gl-counter {
+      display: flex; flex-direction: column; gap: 0.1rem;
+      text-decoration: none; color: var(--text-primary);
+      border: 2px solid var(--border-card); border-radius: 12px;
+      padding: 0.55rem 0.75rem 0.6rem;
+      transition: box-shadow 0.14s ease, transform 0.14s ease, background 0.14s ease;
+    }
+    a.gl-counter:hover, a.gl-counter:focus-visible {
+      box-shadow: 3px 3px 0 rgba(var(--ink-rgb), 0.9); transform: translate(-1px, -1px); background: var(--bg-card-hover);
+    }
+    .gl-counter-num { font-size: 2rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .gl-counter-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .gl-counter-sub { font-size: 0.7rem; color: var(--text-muted); line-height: 1.35; }
+    .gl-counter-go { font-size: 0.68rem; font-weight: 700; color: var(--accent); margin-top: 0.15rem; }
+    .gl-counter.is-hot { border-color: var(--gl-warn); background: rgba(var(--gl-warn-rgb), 0.08); }
+    .gl-counter.is-hot .gl-counter-num { color: var(--gl-warn-ink); }
+
+    .gl-dot {
+      width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+      border: 1.5px solid var(--border-card); background: var(--gl-idle);
+    }
+    .gl-dot.ok   { background: var(--gl-ok); }
+    .gl-dot.warn { background: var(--gl-warn); }
+    .gl-dot.bad  { background: var(--danger); box-shadow: 0 0 0 3px rgba(var(--danger-rgb), 0.22); }
+
+    .gl-health-list { display: flex; flex-direction: column; gap: 0.45rem; }
+    .gl-health-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.84rem; }
+    .gl-health-name { font-weight: 700; }
+    .gl-health-detail { font-size: 0.74rem; color: var(--text-muted); text-align: right; }
+    .gl-health-row.is-bad .gl-health-name { color: var(--danger); }
+    .gl-health-row.is-warn .gl-health-detail { color: var(--gl-warn-ink); font-weight: 600; }
+    .gl-health-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+
+    .gl-fix-box {
+      margin-top: 0.75rem;
+      border: 2px solid var(--danger); border-radius: 12px;
+      background: rgba(var(--danger-rgb), 0.06);
+      padding: 0.6rem 0.75rem 0.7rem;
+    }
+    .gl-fix-box.is-warn { border-color: var(--gl-warn); background: rgba(var(--gl-warn-rgb), 0.08); }
+    .gl-fix-title { font-size: 0.8rem; font-weight: 800; color: var(--danger); margin-bottom: 0.2rem; }
+    .gl-fix-box.is-warn .gl-fix-title { color: var(--gl-warn-ink); }
+    .gl-fix-step { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.4rem; }
+    .gl-fix-cmd {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--border-card); color: #fff; border-radius: 8px;
+      padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+    }
+    .gl-fix-cmd code { font-family: var(--font-mono); font-size: 0.72rem; flex: 1; overflow-x: auto; white-space: nowrap; }
+    .gl-copy-btn {
+      flex-shrink: 0; background: #fff; color: var(--border-card); border: none; border-radius: 999px;
+      font-family: var(--font-sans); font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.65rem; cursor: pointer;
+    }
+
+    /* "Not refreshed" state — glance-data.js missing or older than 36h */
+    .gl-stale-note {
+      margin-bottom: 0.9rem; width: fit-content; max-width: 100%;
+      font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);
+      border: 2px dashed rgba(var(--ink-rgb), 0.4); border-radius: 10px;
+      padding: 0.4rem 0.7rem;
+    }
+    .glance-section.is-stale .gl-card { box-shadow: none; border-style: dashed; }
+    .glance-section.is-stale .gl-counters,
+    .glance-section.is-stale .gl-health-list,
+    .glance-section.is-stale .gl-fix-box { opacity: 0.55; filter: grayscale(0.6); }
+
+    /* Nav health pill — echo of the health lights in the sticky bar */
+    .nav-health {
+      margin-left: auto; flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+      text-decoration: none; padding: 0.35rem 0.8rem; white-space: nowrap;
+      border: 2px solid rgba(255, 255, 255, 0.28); border-radius: 999px;
+    }
+    .nav-health:hover { border-color: rgba(255, 255, 255, 0.6); }
+    .nav-health .gl-dot { width: 9px; height: 9px; }
+
+    /* Inbox Links age flags (#1, same mockup) — amber 3+ days, red 7+ */
+    .il-row.age-warn { box-shadow: inset 6px 0 0 var(--gl-warn), var(--shadow-card); }
+    .il-row.age-bad  { box-shadow: inset 6px 0 0 var(--danger), var(--shadow-card); }
+    .il-row.age-warn:hover { box-shadow: inset 6px 0 0 var(--gl-warn), var(--shadow-hover); }
+    .il-row.age-bad:hover  { box-shadow: inset 6px 0 0 var(--danger), var(--shadow-hover); }
+    .il-age {
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 999px; padding: 0.15em 0.6em; white-space: nowrap;
+      border: 1.5px solid var(--border-card); color: var(--text-secondary); background: var(--bg-card);
+    }
+    .il-age.new  { background: var(--border-card); color: #fff; }
+    .il-age.warn { background: var(--gl-warn); border-color: var(--gl-warn); color: #fff; }
+    .il-age.bad  { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .il-filter-chip .n { opacity: 0.6; font-weight: 600; margin-left: 0.2rem; }
+
+    @media (max-width: 1000px) {
+      .glance-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .gl-counters { gap: 0.45rem; }
+      .gl-counter-num { font-size: 1.5rem; }
+      .gl-health-detail { white-space: normal; }
+    }
+
+    /* =============================================
+       NEXT 14 DAYS (#2), added 2026-10-11 (Mia Chen), same mockup.
+       Data: PKA_GLANCE.deadlines / deadlinesBeyond / deadlinesStatus.
+       BPH items are never hidden; when the BPH feed is stale they get a
+       dashed edge + "stale since DD-MM" flag.
+    ============================================== */
+    #sec-deadlines { scroll-margin-top: calc(var(--nav-height) + 14px); }
+    .deadlines-section { margin-bottom: 2.5rem; }
+    .dl-strip { display: flex; flex-wrap: wrap; gap: 0.65rem; align-items: stretch; }
+    .dl-chip {
+      display: flex; flex-direction: column; gap: 0.05rem;
+      min-width: 150px; max-width: 280px; flex: 0 1 auto;
+      background: var(--bg-card); border: 2.5px solid var(--border-card); border-radius: 12px;
+      box-shadow: 3px 3px 0 rgba(var(--ink-rgb), 0.9);
+      padding: 0.5rem 0.8rem 0.55rem;
+      text-decoration: none; color: var(--text-primary);
+      transition: box-shadow 0.14s ease, transform 0.14s ease;
+    }
+    a.dl-chip:hover, a.dl-chip:focus-visible { box-shadow: var(--shadow-card); transform: translate(-1px, -1px); }
+    .dl-when { display: flex; align-items: baseline; gap: 0.45rem; flex-wrap: wrap; }
+    .dl-date { font-size: 0.82rem; font-weight: 800; white-space: nowrap; }
+    .dl-in { font-size: 0.66rem; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+    .dl-what { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.3; }
+    .dl-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+    .dl-src {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+      border: 1.5px solid currentColor; border-radius: 4px; padding: 0.05em 0.45em; color: var(--text-muted);
+    }
+    .dl-flag {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      border-radius: 4px; padding: 0.05em 0.45em; background: var(--gl-warn); color: #fff; white-space: nowrap;
+    }
+    .dl-chip.is-soon { border-color: var(--gl-warn); }
+    .dl-chip.is-soon .dl-in { color: var(--gl-warn-ink); }
+    .dl-chip.is-stale { border-style: dashed; box-shadow: none; }
+    .dl-empty { font-size: 0.82rem; color: var(--text-muted); font-style: italic; }
+    .dl-later {
+      margin-top: 0.75rem; font-size: 0.78rem; color: var(--text-muted);
+      display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; align-items: center;
+    }
+    .dl-later[hidden] { display: none; }
+    .dl-later strong { color: var(--text-secondary); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .dl-later a { color: inherit; }
+    .dl-later .dl-flag { margin-left: 0.3rem; }
+    .dl-stale-note {
+      margin-bottom: 0.75rem; width: fit-content; max-width: 100%;
+      font-size: 0.8rem; font-weight: 700; color: var(--gl-warn-ink);
+      border: 2px dashed var(--gl-warn); border-radius: 10px; background: rgba(var(--gl-warn-rgb), 0.07);
+      padding: 0.4rem 0.7rem;
+    }
+    .dl-stale-note[hidden], .gl-stale-note[hidden] { display: none; }
+    .deadlines-section.is-stale .dl-strip,
+    .deadlines-section.is-stale .dl-later { opacity: 0.55; filter: grayscale(0.6); }
+
   </style>
 </head>
 <body id="page-top">
@@ -1958,9 +2486,6 @@
   ============================================== -->
   <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
     <a class="dash-nav-item" href="#sec-bookmarks">Bookmarks</a>
-    <a class="dash-nav-item" href="#sec-inbox-links">Inbox Links</a>
-    <a class="dash-nav-item" href="#sec-builds">Project Builds</a>
-    <a class="dash-nav-item" href="#sec-portfolio">Portfolio</a>
     <!-- Quick Notes (round 2, 2026-08-01) — relocated from an
          always-visible widget (dropped round 1) to a compact nav-bar
          popover. .notes-dot is shown/hidden by JS whenever a note
@@ -1969,6 +2494,7 @@
       <span aria-hidden="true">&#128221;</span> Notes
       <span class="notes-dot" id="notes-dot" hidden aria-hidden="true"></span>
     </button>
+    <!-- System health pill (2026-10-11, Mia Chen) — filled by the At a Glance script -->
   </nav>
 
   <!-- QUICK NOTES POPOVER -->
@@ -1987,6 +2513,46 @@
   <main class="page-body">
 
     <!-- ========================================
+         AT A GLANCE — counters (#4) + system health (#3), added 2026-10-11
+         (Mia Chen), David-approved from
+         _mockups/dashboard-live-updates-mockup-2026-10-10.html.
+         Filled by JS from glance-data.js (window.PKA_GLANCE).
+    ========================================= -->
+    <section class="glance-section" id="sec-glance" aria-label="At a Glance">
+      <div class="section-header">
+        <span class="section-label">At a Glance</span>
+        <div class="section-rule"></div>
+      </div>
+      <div class="gl-stale-note" id="gl-stale-note" hidden></div>
+      <div class="glance-grid">
+        <div class="gl-card">
+          <div class="gl-card-title">Open for you <small id="gl-asof"></small></div>
+          <div class="gl-counters" id="gl-counters"></div>
+        </div>
+        <div class="gl-card">
+          <div class="gl-card-title">System health <small id="gl-health-sum"></small></div>
+          <div class="gl-health-list" id="gl-health-list"></div>
+          <div id="gl-fix-area"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================
+         NEXT 14 DAYS (#2), added 2026-10-11 (Mia Chen), David-approved,
+         same mockup. Filled by JS from glance-data.js.
+    ========================================= -->
+    <section class="deadlines-section" id="sec-deadlines" aria-label="Next 14 days">
+      <div class="section-header">
+        <span class="section-label">Next 14 Days</span>
+        <div class="section-rule"></div>
+      </div>
+      <div class="dl-stale-note" id="dl-stale-note" hidden></div>
+      <div class="dl-strip" id="dl-strip"></div>
+      <div class="dl-later" id="dl-later" hidden></div>
+    </section>
+
+
+    <!-- ========================================
          BOOKMARKS — full width now that My Navigation (dropped round 2,
          2026-08-01: redundant with Quick Links) no longer shares the row.
          Pinned (own always-open column) + a 2-column accordion for every
@@ -1997,10 +2563,32 @@
       <div class="section-header">
         <span class="section-label">Bookmarks</span>
         <div class="section-rule"></div>
+        <button class="bm-ghost-btn" id="bm-export-btn" type="button" title="Download all bookmarks as a standard browser bookmarks file">&#8681; Export Bookmarks</button>
         <a class="back-to-top" href="#page-top"><span aria-hidden="true">&#8593;</span> Top</a>
       </div>
 
-      <div class="bm-layout">
+      <!-- Tag filter bar (added 2026-08-23, Mia Chen) — search box +
+           clickable tag cloud, built from whatever tags actually exist
+           across every bookmark (visible + hidden). Cuts across
+           categories, which the category accordion below can't do.
+           See applyTagFilter/renderTagCloud in the Bookmarks script. -->
+      <div class="bm-tag-filter-bar" id="bm-tag-filter-bar">
+        <input type="search" id="bm-tag-search" class="bm-tag-search" placeholder="Filter by tag&hellip;" autocomplete="off">
+        <div class="bm-tag-cloud" id="bm-tag-cloud"></div>
+      </div>
+
+      <!-- Tag filter results — hidden unless a filter is active; replaces
+           the normal Pinned/accordion layout below while filtering
+           (see applyTagFilter). -->
+      <div class="bm-tag-filter-results" id="bm-tag-filter-results" hidden>
+        <div class="bm-tag-filter-results-header">
+          <span class="bm-tag-filter-results-label" id="bm-tag-filter-label"></span>
+          <button class="bm-ghost-btn" id="bm-tag-filter-clear" type="button">&times; Clear filter</button>
+        </div>
+        <div class="bm-chips" id="bm-tag-filter-chips"></div>
+      </div>
+
+      <div class="bm-layout" id="bm-layout">
         <!-- Pinned — own column, always open, rendered by JS -->
         <div id="bm-pinned" class="bm-pinned-col"></div>
 
@@ -2009,10 +2597,11 @@
         <div id="bm-visible" class="bm-visible-area"></div>
       </div>
 
-      <!-- Behind-the-scenes toggle -->
-      <div class="bm-toggle-bar">
+      <!-- Other Bookmarks toggle (renamed from "Behind the scenes",
+           2026-08-23, at David's request) -->
+      <div class="bm-toggle-bar" id="bm-toggle-bar">
         <button class="bm-toggle-btn" id="bm-toggle" aria-expanded="false">
-          &#9662; Behind the scenes
+          &#9662; Other Bookmarks
         </button>
       </div>
 
@@ -2064,21 +2653,21 @@
           <div class="il-header-block">
             <div class="section-header">
               <span class="section-label">Inbox Links</span>
-              <span class="il-count-pill" id="il-count-pill">0 new</span>
+              <span class="il-count-pill" id="il-count-pill">0 need you</span>
               <div class="section-rule"></div>
               <button class="il-ghost-btn" id="il-mark-all" type="button">&#10003; Mark all as read</button>
             </div>
 
             <p class="il-subcopy">
-              Recent drops from Team Inbox and Owners Inbox &mdash; a glance, not a to-do list. Mark items as read to
-              archive them once you&rsquo;ve seen them.
+              What&rsquo;s waiting on you in Owners Inbox. Amber = 3+ days, red = 7+ days. Team traffic is under
+              &ldquo;Team handoffs&rdquo;.
             </p>
 
             <div class="il-filter-bar" id="il-filter-bar">
               <div class="il-filter-group" data-group="source">
-                <button class="il-filter-chip active" data-filter="all" type="button">All</button>
-                <button class="il-filter-chip" data-filter="Team Inbox" type="button">Team Inbox</button>
-                <button class="il-filter-chip" data-filter="Owners Inbox" type="button">Owners Inbox</button>
+                <button class="il-filter-chip active" data-filter="yours" type="button">Yours <span class="n" id="il-n-yours">0</span></button>
+                <button class="il-filter-chip" data-filter="team" type="button">Team handoffs <span class="n" id="il-n-team">0</span></button>
+                <button class="il-filter-chip" data-filter="all" type="button">All <span class="n" id="il-n-all">0</span></button>
               </div>
               <span class="il-filter-sep" id="il-filter-sep" hidden>&mdash;</span>
               <!-- Project chips are built dynamically in JS from whatever
@@ -2087,7 +2676,7 @@
                    shows up here with no markup change needed. -->
               <div class="il-filter-group" id="il-project-filter-group" data-group="project"></div>
             </div>
-            <p class="il-filter-hint">Source filters single-select; project chips are additive toggles on top.</p>
+            <p class="il-filter-hint">Yours is the default every time the tab opens.</p>
           </div>
 
           <div class="il-body-block">
@@ -2124,6 +2713,18 @@
 
           <div class="pb-body-block">
             <div class="builds-list" id="builds-list"></div>
+
+            <!-- Archived (status: 'active', "effectively completed" per
+                 David 2026-08-16) builds — nested inside this same card,
+                 collapsed by default. Mirrors the Inbox Links "Recently
+                 archived" toggle pattern (#il-archive-toggle /
+                 #il-archive-area) rather than a new mechanism. -->
+            <div class="builds-archive-toggle-bar">
+              <button class="builds-archive-toggle-btn" id="builds-archive-toggle" aria-expanded="false" type="button">
+                <span id="builds-archive-chevron">&#9662;</span> Archived Builds (<span id="builds-archive-count">0</span>)
+              </button>
+            </div>
+            <div class="builds-archive-area" id="builds-archive-area" hidden aria-hidden="true"></div>
           </div>
 
         </section>
@@ -2196,10 +2797,14 @@
           <input type="text" id="bm-f-note" class="bm-input" placeholder="e.g. old login, use the backup one" autocomplete="off">
         </label>
         <label class="bm-field">
+          <span class="bm-field-label">Tags <em>(optional, comma-separated)</em></span>
+          <input type="text" id="bm-f-tags" class="bm-input" placeholder="e.g. finance, rarely used" autocomplete="off">
+        </label>
+        <label class="bm-field">
           <span class="bm-field-label">Section</span>
           <select id="bm-f-section" class="bm-input">
             <option value="visible">Visible</option>
-            <option value="hidden">Behind the scenes</option>
+            <option value="hidden">Other Bookmarks</option>
           </select>
         </label>
       </div>
@@ -2252,7 +2857,7 @@
         </label>
         <label class="bm-field">
           <span class="bm-field-label">URL</span>
-          <input type="text" id="ql-f-url" class="bm-input" placeholder="https://... or a file:///, winexplorer:/// link" autocomplete="off">
+          <input type="text" id="ql-f-url" class="bm-input" placeholder="https://... link" autocomplete="off">
         </label>
         <label class="bm-field">
           <span class="bm-field-label">Icon <em>(emoji or 1&ndash;2 characters)</em></span>
@@ -2284,7 +2889,10 @@
        INBOX_LINKS_DATA (array) and INBOX_LINKS_GENERATED_AT (string) —
        consumed by the Inbox Links render code below.
   ============================================== -->
-  <!-- inbox-links-data.js intentionally NOT included in this public mirror -- it is a machine-generated live scan of Team Inbox/Owners Inbox filenames (real internal filenames, some naming team members), same sensitivity class as the old Team Actions data. No sync channel exists for this content. Inbox Links section on this mirror falls back to its own empty state (existing code already guards for INBOX_LINKS_DATA being undefined) -- known, deliberate limitation, not a bug. -->
+  <!-- local data file intentionally not included in the public mirror -->
+  <!-- DATA — At a Glance + Next 14 Days (2026-10-11). window.PKA_GLANCE, written at
+       session start by Marcus Webb's generator. Missing file = muted "not refreshed" band. -->
+  <!-- local data file intentionally not included in the public mirror -->
 
   <!-- =============================================
        SCRIPTS
@@ -2394,7 +3002,13 @@
     'use strict';
 
     var LS_KEY = 'pka_bookmarks';
-    var SCHEMA_VERSION = 1; /* bump when the stored shape changes structurally */
+    var SCHEMA_VERSION = 2; /* bump when the stored shape changes structurally.
+                                v1 -> v2 (2026-08-23, Mia Chen): added an
+                                optional `tags` array per bookmark (visible
+                                AND hidden) for the tag filter/search
+                                feature — see the migration in initBookmarks
+                                below, same stamp-and-backfill pattern as
+                                Quick Links' own v1->v2 category migration. */
 
     function genId() {
       return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -2419,40 +3033,54 @@
       /* Best-effort cross-device push (2026-07-13). Fire-and-forget —
          localStorage above is already the source of truth for this
          device/session; sync failure here must never block or throw. */
-      PkaSync.push(LS_KEY, data);
+      /* Not while this load started from seed data and the Sheet hasn't been checked yet
+         (see SEED-PUSH GUARD below, 2026-10-11). */
+      if (!seededThisLoad) PkaSync.push(LS_KEY, data);
     }
 
     function freshBookmarks() {
       return {
         version: SCHEMA_VERSION,
         visible: SEED_VISIBLE.map(function (b) {
-          return { id: genId(), name: b.name, url: b.url, category: b.category };
+          return { id: genId(), name: b.name, url: b.url, category: b.category, tags: [] };
         }),
         hidden: SEED_HIDDEN.map(function (b) {
-          return { id: genId(), name: b.name, url: b.url };
+          return { id: genId(), name: b.name, url: b.url, tags: [] };
         })
       };
     }
 
     /* Defensive shape check — catches stale/incompatible data saved by an
-       older code version so it can never silently break rendering. */
+       older code version so it can never silently break rendering. `tags`
+       is deliberately OPTIONAL here (undefined is fine) so pre-migration
+       v1 data (no tags field at all) still passes this check and reaches
+       the migration step below, rather than being treated as corrupt. */
     function isValidBookmarkShape(data) {
+      function tagsOk(b) { return b.tags === undefined || Array.isArray(b.tags); }
       return !!data
         && Array.isArray(data.visible)
         && Array.isArray(data.hidden)
         && data.visible.every(function (b) {
           return b && typeof b.id === 'string' && typeof b.name === 'string'
-            && typeof b.url === 'string' && typeof b.category === 'string';
+            && typeof b.url === 'string' && typeof b.category === 'string' && tagsOk(b);
         })
         && data.hidden.every(function (b) {
-          return b && typeof b.id === 'string' && typeof b.name === 'string' && typeof b.url === 'string';
+          return b && typeof b.id === 'string' && typeof b.name === 'string' && typeof b.url === 'string' && tagsOk(b);
         });
     }
+
+    /* SEED-PUSH GUARD (2026-10-11, Marcus Webb). A browser with empty storage (a new profile, a
+       test browser, a cleared cache) used to seed the default list AND push it to the shared PKA
+       Sync Sheet. That overwrote David's real pins and tags for every device. Seed data is now
+       kept local only, and is never pushed while the Sheet already holds a value. The bootstrap
+       below then adopts the Sheet's value as before; seed is pushed only if the Sheet is empty. */
+    var seededThisLoad = false;
 
     function initBookmarks() {
       if (!localStorage.getItem(LS_KEY)) {
         var fresh = freshBookmarks();
-        saveBookmarks(fresh);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(fresh)); } catch (e) {}   /* local only, NO push */
+        seededThisLoad = true;
         return fresh;
       }
 
@@ -2461,15 +3089,23 @@
       if (!isValidBookmarkShape(data)) {
         /* Unrecognised/corrupt shape (e.g. from an incompatible earlier or
            later code version) — fall back to fresh seed data for THIS key
-           only, rather than crashing or rendering blank. */
+           only, rather than crashing or rendering blank. Local only, NO push (2026-10-11). */
         var reset = freshBookmarks();
-        saveBookmarks(reset);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(reset)); } catch (e) {}
+        seededThisLoad = true;
         return reset;
       }
 
       if (data.version !== SCHEMA_VERSION) {
-        /* Shape is valid but unstamped (pre-dates this version guard) —
-           no structural migration needed yet, just stamp and continue. */
+        /* v1 -> v2 (2026-08-23): backfill `tags: []` onto every existing
+           bookmark that doesn't already have a real array there — same
+           "stamp and continue" pattern already used for the plain version
+           guard, just with one field actually added rather than nothing.
+           Idempotent and non-destructive: a bookmark that already has
+           tags (e.g. from a device that synced newer data first) is left
+           untouched. */
+        data.visible.forEach(function (b) { if (!Array.isArray(b.tags)) b.tags = []; });
+        data.hidden.forEach(function (b) { if (!Array.isArray(b.tags)) b.tags = []; });
         data.version = SCHEMA_VERSION;
         saveBookmarks(data);
       }
@@ -2478,10 +3114,12 @@
     }
 
     /* ---- State ---- */
-    var state      = initBookmarks();
-    var openCat    = 'Publishing';   /* which accordion category is open */
-    var hiddenOpen = false;
-    var modalState = { mode: 'add', id: null };
+    var state          = initBookmarks();
+    var openCat        = 'Publishing';   /* which accordion category is open */
+    var hiddenOpen      = false;
+    var modalState      = { mode: 'add', id: null };
+    var activeTagFilter = null;          /* tag filter/search (added 2026-08-23) — a non-empty
+                                             string when active; see applyTagFilter below */
 
     /* ---- Helpers ---- */
     var STAGING_CATEGORY = 'For Filing';
@@ -2525,10 +3163,30 @@
       return CATEGORY_COLOR_VAR[cat] || '--accent';
     }
 
+    /* Tag pills (added 2026-08-23; revised same day per David to sit
+       INLINE with the link rather than on their own row — see
+       .bm-tag-pill CSS). Each pill is returned as its own element, NOT
+       wrapped in a shared container — see that CSS comment for why a
+       wrapper caused several tags to overflow past a narrow card's edge
+       instead of wrapping. Only ever called when a bookmark actually has
+       tags, see chipHtml below. Purely a display; clicking a tag inline
+       does nothing (the tag cloud above the accordion, plus the search
+       box, is the actual filter UI — see renderTagCloud /
+       applyTagFilter) — keeps this from having to fight the parent
+       chip's own click-through-to-URL behaviour. */
+    function tagPillsHtml(tags) {
+      if (!tags || !tags.length) return '';
+      return tags.map(function (t) {
+        return '<span class="bm-tag-pill">' + esc(t) + '</span>';
+      }).join('');
+    }
+
     /* categorized: only Bookmarks' own visible rows (real categories +
        Pinned + For Filing) get the pin and move/copy controls —
-       "Behind the scenes" (hidden) bookmarks have no category, so neither
-       pinning nor moving-between-categories applies to them. */
+       "Other Bookmarks" (hidden) bookmarks have no category, so neither
+       pinning nor moving-between-categories applies to them. Also used,
+       with categorized=false, for the tag-filter results panel, which
+       spans both visible and hidden bookmarks together. */
     function chipHtml(b, categorized) {
       var pinBtn = categorized
         ? '<button class="bm-ctrl-btn bm-ctrl-pin' + (b.pinned ? ' pinned' : '') + '" data-id="' + esc(b.id) + '" title="' + (b.pinned ? 'Unpin from Pinned view' : 'Pin to Pinned view') + '">' + (b.pinned ? '&#9733;' : '&#9734;') + '</button>'
@@ -2536,18 +3194,22 @@
       var moveBtn = categorized
         ? '<button class="bm-ctrl-btn bm-ctrl-move" data-id="' + esc(b.id) + '" title="Move or copy to another category">&#8646;</button>'
         : '';
+      var tags = b.tags || [];
       return '<div class="bm-chip" data-id="' + esc(b.id) + '">'
+        + '<div class="bm-chip-main">'
         + '<a href="' + esc(b.url) + '" target="_blank" rel="noopener noreferrer" class="bm-chip-link" title="' + esc(b.name) + '">'
         + '<span class="bm-chip-name">' + esc(b.name) + '</span>'
         + '<span class="bm-chip-ext" aria-hidden="true">&#8599;</span>'
         + (b.note ? '<span class="bm-chip-note">' + esc(b.note) + '</span>' : '')
         + '</a>'
+        + tagPillsHtml(tags)
         + '<span class="bm-chip-controls">'
         + pinBtn
         + moveBtn
         + '<button class="bm-ctrl-btn bm-ctrl-edit" data-id="' + esc(b.id) + '" title="Edit bookmark">&#9998;</button>'
         + '<button class="bm-ctrl-btn bm-ctrl-delete" data-id="' + esc(b.id) + '" title="Delete bookmark">&#10005;</button>'
         + '</span>'
+        + '</div>'
         + '</div>';
     }
 
@@ -2639,7 +3301,7 @@
 
       container.innerHTML =
         '<div class="bm-hidden-header">'
-        + '<span class="bm-hidden-label">Behind the scenes</span>'
+        + '<span class="bm-hidden-label">Other Bookmarks</span>'
         + '<button class="bm-add-btn" id="bm-add-hidden">&#65291; Add</button>'
         + '</div>'
         + '<div class="bm-chips">' + (chips || '<span class="bm-empty">No items yet.</span>') + '</div>';
@@ -2761,8 +3423,27 @@
     var fUrl     = document.getElementById('bm-f-url');
     var fCat     = document.getElementById('bm-f-cat');
     var fNote    = document.getElementById('bm-f-note');
+    var fTags    = document.getElementById('bm-f-tags');
     var fSection = document.getElementById('bm-f-section');
     var catField = document.getElementById('bm-cat-field');
+
+    /* Free-text "a, b, c" -> a clean, de-duplicated array. De-duping is
+       case-insensitive (so "Finance" and "finance" don't both end up in
+       the tag cloud as separate entries) but keeps the casing of
+       whichever occurrence was typed first. */
+    function parseTags(raw) {
+      var seen = {};
+      var out = [];
+      raw.split(',').forEach(function (t) {
+        t = t.trim();
+        if (!t) return;
+        var k = t.toLowerCase();
+        if (seen[k]) return;
+        seen[k] = true;
+        out.push(t);
+      });
+      return out;
+    }
 
     function populateCatSelect(selected) {
       var cats = getCategories();
@@ -2791,6 +3472,7 @@
         fName.value    = bm.name;
         fUrl.value     = bm.url;
         fNote.value    = bm.note || '';
+        fTags.value    = (bm.tags || []).join(', ');
         fSection.value = inHidden ? 'hidden' : 'visible';
         populateCatSelect(bm.category || '');
         document.getElementById('bm-modal-title').textContent = 'Edit Bookmark';
@@ -2798,6 +3480,7 @@
         fName.value    = '';
         fUrl.value     = '';
         fNote.value    = '';
+        fTags.value    = '';
         fSection.value = zone || 'visible';
         populateCatSelect(prefillCat || getCategories()[0] || '');
         document.getElementById('bm-modal-title').textContent = 'Add Bookmark';
@@ -2820,6 +3503,7 @@
       var name    = fName.value.trim();
       var url     = fUrl.value.trim();
       var note    = fNote.value.trim();
+      var tags    = parseTags(fTags.value);
       var section = fSection.value;
       var cat     = fCat.value;
 
@@ -2841,7 +3525,7 @@
       }
 
       if (modalState.mode === 'add') {
-        var entry = { id: genId(), name: name, url: url, note: note };
+        var entry = { id: genId(), name: name, url: url, note: note, tags: tags };
         if (section === 'visible') { entry.category = cat; state.visible.push(entry); }
         else { state.hidden.push(entry); }
       } else {
@@ -2850,18 +3534,19 @@
 
         if (section === 'visible') {
           if (hiIdx !== -1) state.hidden.splice(hiIdx, 1);
-          if (viIdx !== -1) state.visible[viIdx] = { id: modalState.id, name: name, url: url, category: cat, note: note };
-          else              state.visible.push({ id: modalState.id, name: name, url: url, category: cat, note: note });
+          if (viIdx !== -1) state.visible[viIdx] = { id: modalState.id, name: name, url: url, category: cat, note: note, tags: tags };
+          else              state.visible.push({ id: modalState.id, name: name, url: url, category: cat, note: note, tags: tags });
         } else {
           if (viIdx !== -1) state.visible.splice(viIdx, 1);
-          if (hiIdx !== -1) state.hidden[hiIdx] = { id: modalState.id, name: name, url: url, note: note };
-          else              state.hidden.push({ id: modalState.id, name: name, url: url, note: note });
+          if (hiIdx !== -1) state.hidden[hiIdx] = { id: modalState.id, name: name, url: url, note: note, tags: tags };
+          else              state.hidden.push({ id: modalState.id, name: name, url: url, note: note, tags: tags });
         }
       }
 
       saveBookmarks(state);
       renderVisible();
       renderHidden();
+      refreshTagFilterUI();
       closeModal();
     });
 
@@ -2876,6 +3561,7 @@
       saveBookmarks(state);
       renderVisible();
       renderHidden();
+      refreshTagFilterUI();
     }
 
     /* ---- Move / copy to another category (2026-07-12) ---- */
@@ -2927,14 +3613,16 @@
       if (!bm) return closeMoveModal();
       state.visible.push({
         id: genId(), name: bm.name, url: bm.url,
-        category: moveCatSelect.value, note: bm.note
+        category: moveCatSelect.value, note: bm.note,
+        tags: (bm.tags || []).slice()
       });
       saveBookmarks(state);
       renderVisible();
       closeMoveModal();
     });
 
-    /* ---- Behind-the-scenes toggle ---- */
+    /* ---- Other Bookmarks toggle (renamed from "Behind the scenes",
+       2026-08-23) ---- */
     var toggleBtn  = document.getElementById('bm-toggle');
     var hiddenArea = document.getElementById('bm-hidden');
 
@@ -2943,12 +3631,197 @@
       hiddenArea.hidden = !hiddenOpen;
       hiddenArea.setAttribute('aria-hidden', String(!hiddenOpen));
       toggleBtn.setAttribute('aria-expanded', String(hiddenOpen));
-      toggleBtn.textContent = hiddenOpen ? '▴ Behind the scenes' : '▾ Behind the scenes';
+      toggleBtn.textContent = hiddenOpen ? '▴ Other Bookmarks' : '▾ Other Bookmarks';
+    });
+
+    /* ================================================
+       TAG FILTER (added 2026-08-23, Mia Chen) — search box + clickable
+       tag cloud above the accordion, filtering across ALL bookmarks
+       (visible + hidden, any category) since that's the whole point:
+       cutting across the fixed category boundaries as the list grows.
+       Rather than trying to filter the accordion in place (which would
+       fight its "one category open at a time" interaction and the
+       separate always-open Pinned column), an active filter swaps in a
+       flat results panel and hides the normal layout — see
+       applyTagFilter. Cleared, everything reverts to exactly how it
+       looked before filtering (including whatever accordion category or
+       Other-Bookmarks open/closed state was already set). ---- */
+    var tagSearchInput      = document.getElementById('bm-tag-search');
+    var tagCloudEl          = document.getElementById('bm-tag-cloud');
+    var tagFilterResultsEl  = document.getElementById('bm-tag-filter-results');
+    var tagFilterChipsEl    = document.getElementById('bm-tag-filter-chips');
+    var tagFilterLabelEl    = document.getElementById('bm-tag-filter-label');
+    var tagFilterClearBtn   = document.getElementById('bm-tag-filter-clear');
+
+    function getAllTags() {
+      var seen = {};
+      var out  = [];
+      state.visible.concat(state.hidden).forEach(function (b) {
+        (b.tags || []).forEach(function (t) {
+          var k = t.toLowerCase();
+          if (!seen[k]) { seen[k] = true; out.push(t); }
+        });
+      });
+      out.sort(function (a, b) { return a.localeCompare(b); });
+      return out;
+    }
+
+    function bookmarksMatchingTag(query) {
+      var q = query.trim().toLowerCase();
+      if (!q) return [];
+      return state.visible.concat(state.hidden).filter(function (b) {
+        return (b.tags || []).some(function (t) { return t.toLowerCase().indexOf(q) !== -1; });
+      });
+    }
+
+    function renderTagCloud() {
+      var tags = getAllTags();
+      if (!tags.length) {
+        tagCloudEl.innerHTML = '<span class="bm-empty">No tags yet &mdash; add one from a bookmark&rsquo;s edit (&#9998;) to start filtering.</span>';
+        return;
+      }
+      tagCloudEl.innerHTML = tags.map(function (t) {
+        var isActive = !!activeTagFilter && activeTagFilter.toLowerCase() === t.toLowerCase();
+        return '<button class="bm-tag-chip' + (isActive ? ' active' : '') + '" data-tag="' + esc(t) + '" type="button">' + esc(t) + '</button>';
+      }).join('');
+      tagCloudEl.querySelectorAll('.bm-tag-chip').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var tag = btn.dataset.tag;
+          if (activeTagFilter && activeTagFilter.toLowerCase() === tag.toLowerCase()) {
+            clearTagFilter();
+          } else {
+            activeTagFilter = tag;
+            tagSearchInput.value = tag;
+            applyTagFilter();
+          }
+        });
+      });
+    }
+
+    function applyTagFilter() {
+      renderTagCloud();
+
+      var bmLayoutEl    = document.getElementById('bm-layout');
+      var bmToggleBarEl = document.getElementById('bm-toggle-bar');
+      var hiddenAreaEl  = document.getElementById('bm-hidden');
+
+      if (!activeTagFilter) {
+        tagFilterResultsEl.hidden = true;
+        bmLayoutEl.style.display    = '';
+        bmToggleBarEl.style.display = '';
+        hiddenAreaEl.hidden = !hiddenOpen;
+        hiddenAreaEl.setAttribute('aria-hidden', String(!!hiddenOpen === false));
+        return;
+      }
+
+      var matches = bookmarksMatchingTag(activeTagFilter)
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+
+      tagFilterLabelEl.textContent = matches.length + ' bookmark' + (matches.length === 1 ? '' : 's')
+        + ' tagged “' + activeTagFilter + '”';
+      tagFilterChipsEl.innerHTML = matches.length
+        ? matches.map(function (b) { return chipHtml(b, false); }).join('')
+        : '<span class="bm-empty">No matches.</span>';
+      bindChipControls(tagFilterChipsEl);
+
+      tagFilterResultsEl.hidden = false;
+      bmLayoutEl.style.display    = 'none';
+      bmToggleBarEl.style.display = 'none';
+      hiddenAreaEl.hidden = true;
+      hiddenAreaEl.setAttribute('aria-hidden', 'true');
+    }
+
+    function clearTagFilter() {
+      activeTagFilter = null;
+      tagSearchInput.value = '';
+      applyTagFilter();
+    }
+
+    /* Called after any add/edit/delete so a newly-added or removed tag
+       shows up in the cloud (or, if a filter is currently active, so its
+       results panel reflects the change) immediately — see the calls
+       from the save/delete handlers above and the sync callback below. */
+    function refreshTagFilterUI() {
+      if (activeTagFilter) { applyTagFilter(); } else { renderTagCloud(); }
+    }
+
+    tagSearchInput.addEventListener('input', function () {
+      activeTagFilter = tagSearchInput.value.trim() || null;
+      applyTagFilter();
+    });
+    tagFilterClearBtn.addEventListener('click', clearTagFilter);
+
+    /* ================================================
+       EXPORT BOOKMARKS (added 2026-08-23, Mia Chen) — downloads every
+       bookmark (Pinned/category-tagged visible ones, plus Other
+       Bookmarks) as a standard Netscape Bookmark File
+       (<!DOCTYPE NETSCAPE-Bookmark-file-1>), the same format Chrome/
+       Firefox/Edge both export AND import under File > Bookmarks. Lets
+       David bring the dashboard's bookmark set into a Chromebook browser
+       (or anywhere else) directly via that browser's own native Import,
+       as a backup/alternative to the live PkaSync mechanism — no import
+       side built here, every major browser already has one. */
+    function buildNetscapeBookmarks() {
+      var stamp = Math.floor(Date.now() / 1000); /* Netscape format wants Unix-epoch seconds */
+
+      function folder(title, items) {
+        if (!items.length) return '';
+        var out = '    <DT><H3 ADD_DATE="' + stamp + '">' + esc(title) + '</H3>\n    <DL><p>\n';
+        items.forEach(function (b) {
+          out += '        <DT><A HREF="' + esc(b.url) + '" ADD_DATE="' + stamp + '">' + esc(b.name) + '</A>\n';
+        });
+        out += '    </DL><p>\n';
+        return out;
+      }
+
+      var body = '';
+
+      var pinned = state.visible.filter(function (b) { return b.pinned; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+      body += folder('Pinned', pinned);
+
+      var cats = [];
+      state.visible.forEach(function (b) {
+        if (cats.indexOf(b.category) === -1) cats.push(b.category);
+      });
+      cats.forEach(function (cat) {
+        var items = state.visible.filter(function (b) { return b.category === cat; })
+          .sort(function (a, b) { return a.name.localeCompare(b.name); });
+        body += folder(cat, items);
+      });
+
+      var hidden = state.hidden.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+      body += folder('Other Bookmarks', hidden);
+
+      return '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n'
+        + '<!-- This is an automatically generated file.\n'
+        + '     It will be read and overwritten.\n'
+        + '     DO NOT EDIT! -->\n'
+        + '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n'
+        + '<TITLE>Bookmarks</TITLE>\n'
+        + '<H1>Bookmarks</H1>\n'
+        + '<DL><p>\n'
+        + body
+        + '</DL><p>\n';
+    }
+
+    document.getElementById('bm-export-btn').addEventListener('click', function () {
+      var html = buildNetscapeBookmarks();
+      var blob = new Blob([html], { type: 'text/html' });
+      var url  = URL.createObjectURL(blob);
+      var a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'pka-dashboard-bookmarks-' + new Date().toISOString().slice(0, 10) + '.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     });
 
     /* ---- Initial render ---- */
     renderVisible();
     renderHidden();
+    renderTagCloud();
 
     /* ---- Cross-device sync bootstrap (2026-07-13) ----
        Runs AFTER the synchronous localStorage render above, never
@@ -2965,6 +3838,7 @@
       if (!result) return; /* sync unavailable this session — localStorage stands as-is */
 
       if (result.value === null) {
+        seededThisLoad = false;   /* Sheet empty: this device's state may seed it */
         PkaSync.push(LS_KEY, state);
         return;
       }
@@ -2974,13 +3848,24 @@
         return;
       }
 
+      seededThisLoad = false;   /* Sheet checked: normal pushes may resume (SEED-PUSH GUARD, 2026-10-11) */
       if (JSON.stringify(result.value) === JSON.stringify(state)) return; /* already in sync, nothing to do */
 
       state = result.value;
-      if (state.version !== SCHEMA_VERSION) state.version = SCHEMA_VERSION;
+      if (state.version !== SCHEMA_VERSION) {
+        /* Same v1 -> v2 tags backfill as initBookmarks() — a remote value
+           pulled from a device/session that hasn't picked up this build
+           yet (or an even older cached Sheet value) won't carry `tags`
+           at all; without this, adopting it here would silently wipe the
+           field back out of state until the next full page load. */
+        state.visible.forEach(function (b) { if (!Array.isArray(b.tags)) b.tags = []; });
+        state.hidden.forEach(function (b) { if (!Array.isArray(b.tags)) b.tags = []; });
+        state.version = SCHEMA_VERSION;
+      }
       saveBookmarks(state); /* also re-pushes, harmless no-op remotely since value is unchanged */
       renderVisible();
       renderHidden();
+      refreshTagFilterUI();
     });
 
   }());
@@ -3001,7 +3886,7 @@
      assigning each existing item a category by name-matching, preserving
      every id/name/url/icon exactly — rather than re-seeding blank. The
      one deliberate exception is the Obsidian tile: as part of this same
-     migration its link is upgraded from an old winexplorer:// folder path
+     migration its link is upgraded from an old local-folder  folder path
      to the real, tested obsidian://open?vault=Obsidian%20PC URI (David's
      2026-08-12 ask — confirmed working via a direct ShellExecute test
      that launched the correct vault; see build report). Every other
@@ -3057,22 +3942,8 @@
        Printer Quotes already was, won't appear on a fresh/reset browser
        until added once by hand. */
     var SEED_QUICKLINKS = [
-      { name: 'WriteApp',             url: '../../WriteApp/writer.html', icon: '\u270D\uFE0F', category: 'daily-ablution' },
-      { name: 'Obsidian',             url: 'obsidian://open?vault=Obsidian%20PC', icon: '\uD83D\uDDD2\uFE0F', category: 'daily-ablution' },
-      /* Master Sales Tracker Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
-      /* PO & Invoice Tracker Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
-      /* Added 2026-08-12 (Marcus Webb) \u2014 Printer_Quotes_Per_Title_Complete
-         now lives in the HEADPRESS Drive folder; Quick Links has no sync
-         backend (see PKA SYNC comment above \u2014 only Bookmarks is wired to
-         it), so this seed entry appears on any fresh load/reset but will
-         NOT retroactively appear in an already-populated browser's
-         localStorage \u2014 David (or whoever) needs to add it once via the
-         "Add Link" tile there too if it doesn't show up automatically. */
-      /* Printer Quotes Per Title Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
-      /* Owner's Inbox Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
-      /* Team Inbox Quick Links seed entry stripped for public mirror -- real financial Sheet ID or internal winexplorer:// path + Windows username */
-      { name: 'Book Production Hub',  url: 'https://netherleys.github.io/book-production-hub/', icon: '\uD83D\uDCDA', category: 'production' },
-      { name: 'Image Resize Tool',    url: '../Image%20Resize/index.html', icon: '\uD83D\uDDBC\uFE0F', category: 'tools' }
+      { name: 'Book Production Hub',  url: 'https://netherleys.github.io/book-production-hub/', icon: '\uD83D\uDCDA', category: 'production' }
+      /* other Quick Links stripped for public mirror: local/obsidian/Sheet links */
     ];
 
     function getLinks() {
@@ -3161,29 +4032,66 @@
       });
     }
 
+    /* ---- One-time backfill (2026-09-07, Mia Chen) ----
+       'Printer Quotes Per Title' was added to SEED_QUICKLINKS on 2026-08-12
+       (Marcus Webb), but per the seed-array comment above, a seed entry
+       only reaches a FRESH/reset browser via freshLinks() — it never
+       retroactively lands in a browser (like David's real one) that was
+       already populated before that entry existed. David asked directly
+       for this tile on 2026-09-07, confirming it never got added by hand
+       either. Quick Links has no server sync (only Bookmarks does — see
+       PKA SYNC comment), so this is the only durable code-level fix:
+       inject it once into any already-populated store that's missing it,
+       matched by URL (not name, in case it was ever manually renamed).
+       Guarded by its own flag key so a later deliberate delete of the
+       tile by the user doesn't get silently re-added on the next load —
+       same stamp-and-backfill spirit as the v1->v2 category migration
+       above, but scoped to one specific item instead of every item. */
+    var PRINTER_QUOTES_URL = '';  /* stripped for public mirror */
+    var BACKFILL_FLAG_KEY  = 'pka_quicklinks_backfill_printerquotes_20260907';
+    function backfillPrinterQuotesTile(data) {
+      try { if (localStorage.getItem(BACKFILL_FLAG_KEY)) return data; } catch (e) {}
+      var already = data.items.some(function (it) {
+        return it.url === PRINTER_QUOTES_URL || /printer quotes/i.test(it.name || '');
+      });
+      if (!already) {
+        data.items.push({
+          id: genId(),
+          name: 'Printer Quotes Per Title',
+          url: PRINTER_QUOTES_URL,
+          icon: '🖨️',
+          category: 'finance'
+        });
+        saveLinks(data);
+      }
+      try { localStorage.setItem(BACKFILL_FLAG_KEY, '1'); } catch (e) {}
+      return data;
+    }
+
     function initLinks() {
       if (!localStorage.getItem(LS_KEY)) {
         var fresh = freshLinks();
         saveLinks(fresh);
+        try { localStorage.setItem(BACKFILL_FLAG_KEY, '1'); } catch (e) {}
         return fresh;
       }
       var data = getLinks();
       if (!isValidShape(data)) {
         var reset = freshLinks();
         saveLinks(reset);
+        try { localStorage.setItem(BACKFILL_FLAG_KEY, '1'); } catch (e) {}
         return reset;
       }
       if (needsMigration(data)) {
         data.items = migrateItems(data.items);
         data.version = SCHEMA_VERSION;
         saveLinks(data);
-        return data;
       }
       if (data.version !== SCHEMA_VERSION) {
         data.version = SCHEMA_VERSION;
         saveLinks(data);
       }
-      return data;
+      return backfillPrinterQuotesTile(data);
     }
 
     /* ---- State ---- */
@@ -3524,6 +4432,256 @@
 
 
   /* ================================================
+     AT A GLANCE — counters (#4) + system health (#3) + nav health pill,
+     added 2026-10-11 (Mia Chen), David-approved mockup
+     _mockups/dashboard-live-updates-mockup-2026-10-10.html.
+
+     Data: glance-data.js (loaded above via <script src>), written by
+     Marcus Webb's session-start generator. Contract:
+       window.PKA_GLANCE = { generatedAt,
+         counters: { asks:{count,link}, comments:{count,link}, awaitingDavid:{count,link} },
+         health: [ { id: "google_token"|"inbox_data"|"session_start"|"mirror",
+                     label, state: "ok|warn|bad", detail, since, fix:{text,command}|null } ] };
+     Missing file, bad shape, or older than GLANCE_STALE_HOURS = muted
+     "not refreshed" state, never an error. Display-only: no network calls.
+  ================================================ */
+  (function () {
+    var AWAITING_AMBER_OVER = 30;   // "Awaiting you" turns amber above this — David's call, change here only
+    var GLANCE_STALE_HOURS  = 36;   // older than this = "data not refreshed"
+
+    var sectionEl = document.getElementById('sec-glance');
+    if (!sectionEl) return;
+    var countersEl = document.getElementById('gl-counters');
+    var asofEl     = document.getElementById('gl-asof');
+    var healthEl   = document.getElementById('gl-health-list');
+    var healthSum  = document.getElementById('gl-health-sum');
+    var fixArea    = document.getElementById('gl-fix-area');
+    var staleNote  = document.getElementById('gl-stale-note');
+    var navHealth  = document.getElementById('nav-health');
+
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+    /* "today 07:19" or logform "2026 Oct 09 18:42" */
+    function whenText(d) {
+      var t = pad(d.getHours()) + ':' + pad(d.getMinutes());
+      if (sameDay(d, new Date())) return 'today ' + t;
+      return d.getFullYear() + ' ' + MONTHS[d.getMonth()] + ' ' + pad(d.getDate()) + ' ' + t;
+    }
+    function parseDate(s) {
+      if (!s) return null;
+      var d = new Date(String(s).replace(' ', 'T'));
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    var G = (typeof window.PKA_GLANCE === 'object' && window.PKA_GLANCE) ? window.PKA_GLANCE : null;
+    var generated = G ? parseDate(G.generatedAt) : null;
+    var missing = !G || !generated;
+    var stale = missing || (Date.now() - generated.getTime()) > GLANCE_STALE_HOURS * 3600 * 1000;
+
+    sectionEl.classList.toggle('is-stale', stale);
+    if (stale) {
+      staleNote.hidden = false;
+      staleNote.innerHTML = missing
+        ? '&#9888; Data not refreshed: glance-data.js is missing. It is written at session start.'
+        : '&#9888; Data not refreshed since ' + esc(whenText(generated)) + '. Numbers may be out of date until the next session start.';
+    }
+    asofEl.textContent = missing ? 'not refreshed' : 'as of ' + whenText(generated);
+
+    /* ---------- #4 counters ---------- */
+    var C = (G && G.counters) || {};
+    var COUNTERS = [
+      { key: 'asks',          label: 'Asks',         sub: 'open ==ASK, both vaults',  go: 'Ask Evelyn' },
+      { key: 'comments',      label: 'Comments',     sub: 'open ==COMMENT notes',     go: 'Open first' },
+      { key: 'awaitingDavid', label: 'Awaiting you', sub: 'in Outstanding Tasks',     go: 'Outstanding Tasks' }
+    ];
+    countersEl.innerHTML = COUNTERS.map(function (def) {
+      var c = C[def.key] || {};
+      var n = (typeof c.count === 'number' && isFinite(c.count)) ? c.count : null;
+      var hot = def.key === 'awaitingDavid' && n !== null && n > AWAITING_AMBER_OVER;
+      var sub = def.sub + (hot ? ' &middot; over ' + AWAITING_AMBER_OVER + ': overload signal' : '');
+      var inner =
+        '<span class="gl-counter-num">' + (n === null ? '&mdash;' : n) + '</span>' +
+        '<span class="gl-counter-label">' + def.label + '</span>' +
+        '<span class="gl-counter-sub">' + sub + '</span>' +
+        (c.link ? '<span class="gl-counter-go">' + def.go + ' &#8599;</span>' : '');
+      var cls = 'gl-counter' + (hot ? ' is-hot' : '');
+      return c.link
+        ? '<a class="' + cls + '" href="' + esc(c.link) + '">' + inner + '</a>'
+        : '<div class="' + cls + '">' + inner + '</div>';
+    }).join('');
+
+    /* ---------- #3 health lights ---------- */
+    var H = (G && Array.isArray(G.health)) ? G.health : [];
+    var bad = 0, warn = 0, token = null;
+    if (!H.length) {
+      healthEl.innerHTML = '<div class="gl-health-empty">No health data yet.</div>';
+    } else {
+      healthEl.innerHTML = H.map(function (h) {
+        var st = (h.state === 'bad' || h.state === 'warn' || h.state === 'ok') ? h.state : '';
+        if (st === 'bad') bad++;
+        if (st === 'warn') warn++;
+        if (h.id === 'google_token') token = h;
+        var since = parseDate(h.since);
+        var title = since ? ' title="Since ' + esc(whenText(since)) + '"' : '';
+        return '<div class="gl-health-row' + (st === 'bad' ? ' is-bad' : st === 'warn' ? ' is-warn' : '') + '"' + title + '>' +
+          '<span class="gl-dot ' + st + '" aria-hidden="true"></span>' +
+          '<span class="gl-health-name">' + esc(h.label || h.id) + '</span>' +
+          '<span class="gl-health-detail">' + esc(h.detail || '') + '</span>' +
+        '</div>';
+      }).join('');
+    }
+    var issues = bad + warn;
+    healthSum.className = bad ? 'is-bad' : '';
+    healthSum.textContent = !H.length ? '' :
+      bad ? bad + (bad === 1 ? ' fix needed' : ' fixes needed') :
+      warn ? warn + (warn === 1 ? ' to check' : ' to check') : 'all green';
+
+    /* Google-token fix box — only when google_token is bad or warn */
+    if (token && (token.state === 'bad' || token.state === 'warn')) {
+      var fix = token.fix || null;
+      fixArea.innerHTML =
+        '<div class="gl-fix-box' + (token.state === 'warn' ? ' is-warn' : '') + '">' +
+          '<div class="gl-fix-title">2-minute fix: re-connect Google</div>' +
+          '<div class="gl-fix-step">' + esc((fix && fix.text) || 'Ask Thomas to re-run the Google consent flow.') + '</div>' +
+          (fix && fix.command
+            ? '<div class="gl-fix-cmd"><code id="gl-fix-cmd-text">' + esc(fix.command) + '</code>' +
+              '<button class="gl-copy-btn" type="button" id="gl-copy-btn">Copy</button></div>'
+            : '') +
+        '</div>';
+      var copyBtn = document.getElementById('gl-copy-btn');
+      if (copyBtn) copyBtn.addEventListener('click', function () {
+        var text = document.getElementById('gl-fix-cmd-text').textContent;
+        function done(ok) {
+          copyBtn.textContent = ok ? 'Copied' : 'Select + copy';
+          setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1600);
+        }
+        function fallback() {
+          var ta = document.createElement('textarea');
+          ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta); done(ok);
+        }
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+          } else { fallback(); }
+        } catch (e) { fallback(); }
+      });
+    }
+
+    /* ---------- nav health pill ---------- */
+    if (navHealth) {
+      var dotCls = stale ? '' : bad ? 'bad' : warn ? 'warn' : H.length ? 'ok' : '';
+      var label = stale ? 'Data not refreshed'
+        : bad ? bad + (bad === 1 ? ' fix needed' : ' fixes needed')
+        : warn ? warn + ' to check'
+        : H.length ? 'All systems OK' : 'No health data';
+      navHealth.innerHTML = '<span class="gl-dot ' + dotCls + '" aria-hidden="true"></span>' + esc(label);
+      navHealth.title = 'System health: ' + label;
+      navHealth.hidden = false;
+    }
+  }());
+
+  /* ================================================
+     NEXT 14 DAYS (#2) — added 2026-10-11 (Mia Chen), David-approved.
+     Data (glance-data.js, Marcus Webb):
+       deadlines:       [ { date:"YYYY-MM-DD", label, kind:"tax|xero|pub|parked|other",
+                            source:"rule|bph|outstanding", link|null } ]
+       deadlinesBeyond: [ same shape, max 3 ]
+       deadlinesStatus: { bph: { stale: bool, since: "ISO"|null } }
+     Any field missing = graceful empty state. BPH items are never hidden;
+     when bph.stale is true they carry a "stale since DD-MM" flag.
+  ================================================ */
+  (function () {
+    var SOON_DAYS = 3;        // amber edge at this many days or fewer
+    var GLANCE_STALE_HOURS = 36;
+    var sec = document.getElementById('sec-deadlines');
+    if (!sec) return;
+    var strip = document.getElementById('dl-strip');
+    var later = document.getElementById('dl-later');
+    var note  = document.getElementById('dl-stale-note');
+
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var SRC = { rule: 'Rule', bph: 'BPH', outstanding: 'Tasks' };
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function ymd(s) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    }
+    function logform(d) { return d.getFullYear() + ' ' + MONTHS[d.getMonth()] + ' ' + pad(d.getDate()); }
+    function ukShort(d) { return pad(d.getDate()) + '-' + pad(d.getMonth() + 1); }   // DD-MM, David's UK rule
+
+    var G = (typeof window.PKA_GLANCE === 'object' && window.PKA_GLANCE) ? window.PKA_GLANCE : null;
+    var gen = G && G.generatedAt ? new Date(String(G.generatedAt).replace(' ', 'T')) : null;
+    var glanceStale = !gen || isNaN(gen.getTime()) || (Date.now() - gen.getTime()) > GLANCE_STALE_HOURS * 3600 * 1000;
+    sec.classList.toggle('is-stale', glanceStale);
+
+    var bph = (G && G.deadlinesStatus && G.deadlinesStatus.bph) || {};
+    var bphStale = bph.stale === true;
+    var bphSince = bph.since ? ymd(bph.since) : null;
+    var staleFlag = 'stale since ' + (bphSince ? ukShort(bphSince) : '?');
+
+    if (bphStale) {
+      note.hidden = false;
+      note.innerHTML = '&#9888; BPH dates stale' + (bphSince ? ' since ' + esc(ukShort(bphSince)) : '') +
+        '. Rule and task dates are still current.';
+    }
+
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    function daysUntil(d) { return Math.round((d - today) / 86400000); }
+    function clean(list) {
+      return (Array.isArray(list) ? list : [])
+        .map(function (x) { return x ? { item: x, d: ymd(x.date) } : null; })
+        .filter(function (x) { return x && x.d; })
+        .sort(function (a, b) { return a.d - b.d; });
+    }
+
+    var items = clean(G && G.deadlines);
+    if (!items.length) {
+      strip.innerHTML = '<div class="dl-empty">' +
+        (G && Array.isArray(G.deadlines) ? 'Nothing dated in the next 14 days.' : 'No deadline data yet.') + '</div>';
+    } else {
+      strip.innerHTML = items.map(function (x) {
+        var it = x.item, n = daysUntil(x.d);
+        var stale = it.source === 'bph' && bphStale;
+        var inTxt = n < 0 ? (-n) + (n === -1 ? ' day ago' : ' days ago') : n === 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days';
+        var cls = 'dl-chip' + (n <= SOON_DAYS ? ' is-soon' : '') + (stale ? ' is-stale' : '');
+        var inner =
+          '<div class="dl-when"><span class="dl-date">' + DAYS[x.d.getDay()] + ' ' + logform(x.d) + '</span>' +
+            '<span class="dl-in">' + inTxt + '</span></div>' +
+          '<div class="dl-what">' + esc(it.label || '') + '</div>' +
+          '<div class="dl-tags"><span class="dl-src">' + esc(SRC[it.source] || it.source || 'Other') + '</span>' +
+            (stale ? '<span class="dl-flag">' + esc(staleFlag) + '</span>' : '') + '</div>';
+        return it.link
+          ? '<a class="' + cls + '" href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + inner + '</a>'
+          : '<div class="' + cls + '">' + inner + '</div>';
+      }).join('');
+    }
+
+    var beyond = clean(G && G.deadlinesBeyond).slice(0, 3);
+    if (beyond.length) {
+      later.hidden = false;
+      later.innerHTML = '<strong>Beyond 14 days</strong>' + beyond.map(function (x) {
+        var it = x.item;
+        var txt = esc(logform(x.d)) + ' &middot; ' + esc(it.label || '') + (it.source === 'bph' ? ' <em>(BPH)</em>' : '');
+        var flag = (it.source === 'bph' && bphStale) ? '<span class="dl-flag">' + esc(staleFlag) + '</span>' : '';
+        return '<span>' + (it.link ? '<a href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + txt + '</a>' : txt) + flag + '</span>';
+      }).join('');
+    }
+  }());
+
+  /* ================================================
      INBOX LINKS — data-driven feed of recent Team Inbox / Owners Inbox
      drops, 2026-08-14 (Mia Chen), ported from
      wireframes\inbox-links-wireframe-2026-08-14-v4.html, David-approved.
@@ -3584,7 +4742,44 @@
     if (!listEl) return; // section not present — nothing to wire up
 
     var dismissedIds   = loadDismissed();
-    var currentSource  = 'all';
+    var currentSource  = 'yours';   // "Yours" default every time the tab opens (2026-10-11)
+
+    /* ---- "Yours" view + age flags (2026-10-11, Mia Chen, David-approved mockup
+       _mockups/dashboard-live-updates-mockup-2026-10-10.html) ----
+       Yours = Owners Inbox items not already marked done. Age = whole calendar
+       days since dateReceived (the file's arrival in the inbox). Amber 3+, red 7+. */
+    var AGE_WARN_DAYS = 3, AGE_BAD_DAYS = 7;
+    var DONE_STATUSES = { processed: 1, reviewed: 1, delivered: 1, archived: 1 };
+    function isYours(item) {
+      return item.source === 'Owners Inbox' && !DONE_STATUSES[String(item.status || '').toLowerCase()];
+    }
+    var todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
+    function ageDays(item) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(item.dateReceived || '');
+      if (!m) return null;
+      var d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return Math.max(0, Math.round((todayMidnight - d) / 86400000));
+    }
+    function ageFlagHtml(item) {
+      var a = ageDays(item);
+      if (a === null) return '';
+      if (a === 0) return '<span class="il-age new">New</span>';
+      var cls = a >= AGE_BAD_DAYS ? ' bad' : (a >= AGE_WARN_DAYS ? ' warn' : '');
+      return '<span class="il-age' + cls + '">' + a + (a === 1 ? ' day' : ' days') + '</span>';
+    }
+    function ageRowClass(item) {
+      var a = ageDays(item);
+      return a === null ? '' : a >= AGE_BAD_DAYS ? ' age-bad' : (a >= AGE_WARN_DAYS ? ' age-warn' : '');
+    }
+    /* Generator boilerplate adds nothing for David — show context only when it says something real. */
+    function contextHtml(item) {
+      var c = item.context || '';
+      if (!c || /^(registered by |File dropped in |Team Inbox item)/.test(c)) return '';
+      return '<span class="il-context">' + c + '</span>';
+    }
+    function isScreenshot(item) {
+      return item.source === 'Team Inbox' && /^Screenshot .*\.png$/i.test(item.filename || '');
+    }
     var currentProject = null;
 
     /* Project chips are built from whatever distinct projectTag values are
@@ -3623,34 +4818,229 @@
         : '<span class="il-filename">' + item.filename + '</span>';
     }
     function metaText(item, prefix) {
-      return (prefix || 'Dropped ') + item.dateReceived;
+      return (prefix || 'Dropped ') + formatLogDate(item.dateReceived);
+    }
+
+    /* Turnaround Remittance Advice structured breakdown, added 2026-09-06.
+       item.remittance = { gross, net, lines: [{date, invoiceNumber, amount
+       (signed), type}], warnings } — see generate_inbox_links_data.py /
+       turnaround_remittance_parser.py for the extraction + sign convention.
+       gross/net may individually be null if that part of the PDF didn't
+       match the expected shape; render defensively rather than assuming
+       both are present. */
+    function formatGBP(n) {
+      if (typeof n !== 'number' || isNaN(n)) return '&mdash;';
+      var sign = n < 0 ? '&minus;' : '';
+      return sign + '&pound;' + Math.abs(n).toFixed(2);
+    }
+
+    function remittanceStripHtml(r) {
+      var count = (r.lines || []).length;
+      return 'Gross <strong>' + formatGBP(r.gross) + '</strong> &rarr; Net <strong>' + formatGBP(r.net) + '</strong>' +
+        (count ? ' &middot; ' + count + ' line' + (count === 1 ? '' : 's') : '') +
+        ' <button class="il-breakdown-toggle" type="button" aria-expanded="false">Show breakdown &#9662;</button>';
+    }
+
+    /* David's preferred "logform" date display, e.g. "2026 Jun 10" —
+       requested 2026-09-06. Stored data stays ISO (YYYY-MM-DD); this only
+       reformats for display. */
+    var LOGFORM_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function formatLogDate(iso) {
+      if (!iso) return '&mdash;';
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+      if (!m) return iso;
+      var mon = LOGFORM_MONTHS[parseInt(m[2], 10) - 1];
+      if (!mon) return iso;
+      return m[1] + ' ' + mon + ' ' + parseInt(m[3], 10);
+    }
+
+    function remittanceLineRowHtml(line) {
+      return '<tr>' +
+        '<td>' + formatLogDate(line.date) + '</td>' +
+        '<td>' + (line.invoiceNumber || '&mdash;') + '</td>' +
+        '<td class="il-breakdown-amt type-' + line.type + '">' + formatGBP(line.amount) +
+          '<span class="il-breakdown-type">' + (line.type === 'credit' ? 'Credit' : 'Deduction') + '</span>' +
+        '</td>' +
+        '</tr>';
+    }
+
+    function buildRemittancePanel(r) {
+      var panel = document.createElement('div');
+      panel.className = 'il-breakdown-panel';
+      panel.hidden = true;
+
+      var linesHtml = (r.lines || []).map(remittanceLineRowHtml).join('');
+      var warningsHtml = (r.warnings || []).map(function (w) {
+        return '<div class="il-breakdown-warning">&#9888;<span>' + w + '</span></div>';
+      }).join('');
+
+      panel.innerHTML =
+        '<div class="il-breakdown-summary">' +
+          '<span>Payment before deductions: <strong>' + formatGBP(r.gross) + '</strong></span>' +
+          '<span>Payment after deductions: <strong>' + formatGBP(r.net) + '</strong></span>' +
+        '</div>' +
+        (linesHtml
+          ? '<table class="il-breakdown-table"><thead><tr><th>Date</th><th>Invoice</th><th>Amount</th></tr></thead><tbody>' + linesHtml + '</tbody></table>'
+          : '<div class="il-breakdown-empty">No invoice/deduction lines were parsed from this PDF.</div>') +
+        warningsHtml;
+
+      return panel;
+    }
+
+    function wireRemittanceToggle(row, panel) {
+      var toggleBtn = row.querySelector('.il-breakdown-toggle');
+      if (!toggleBtn) return;
+      toggleBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+        toggleBtn.setAttribute('aria-expanded', String(!expanded));
+        toggleBtn.innerHTML = expanded ? 'Show breakdown &#9662;' : 'Hide breakdown &#9652;';
+        panel.hidden = expanded;
+      });
+    }
+
+    /* Wraps a built row in a container with its remittance breakdown panel
+       when the item has one; otherwise returns the row unchanged. Callers
+       (makeActiveRow/makeArchivedRow) just append whatever this returns —
+       render()'s listEl.appendChild(...) doesn't care whether it got a
+       bare row or a wrapped one. */
+    function withRemittancePanel(item, row) {
+      if (!item.remittance) return row;
+      var panel = buildRemittancePanel(item.remittance);
+      wireRemittanceToggle(row, panel);
+      var wrap = document.createElement('div');
+      wrap.className = 'il-item-wrap';
+      wrap.appendChild(row);
+      wrap.appendChild(panel);
+      return wrap;
     }
 
     function makeActiveRow(item) {
       var row = document.createElement('div');
-      row.className = 'il-row';
+      var yours = isYours(item);
+      row.className = 'il-row' + (yours ? ageRowClass(item) : '');
       row.dataset.id = item.id;
       row.innerHTML =
         '<div class="il-info">' +
           '<div class="il-badges">' +
             '<span class="il-source-badge ' + sourceBadgeClass(item.source) + '">' + item.source + '</span>' +
             (item.fileType ? '<span class="il-ext-chip">' + item.fileType + '</span>' : '') +
+            (yours ? ageFlagHtml(item) : '') +
             projectTagHtml(item) +
           '</div>' +
           filenameHtml(item) +
-          '<span class="il-context">' + item.context + '</span>' +
+          contextHtml(item) +
           '<span class="il-meta">' + metaText(item) + '</span>' +
+          (item.remittance ? '<div class="il-remittance-strip">' + remittanceStripHtml(item.remittance) + '</div>' : '') +
+          '<div class="il-status-msg" aria-live="polite"></div>' +
         '</div>' +
         '<button class="il-mark-read" type="button">&#10003; Mark as read</button>';
-      row.querySelector('.il-mark-read').addEventListener('click', function () {
+      var btn = row.querySelector('.il-mark-read');
+      function hideHere() {
         row.classList.add('il-leaving');
         setTimeout(function () {
           dismissedIds[item.id] = true;
           saveDismissed(dismissedIds);
           render();
         }, 220);
+      }
+      btn.addEventListener('click', function () {
+        // Non-notes (images, PDFs, …) have no status property: browser-only hide, as before.
+        if (!isNote(item)) { hideHere(); return; }
+        markNoteRead(item, row, btn, hideHere);
       });
-      return row;
+      return withRemittancePanel(item, row);
+    }
+
+    /* ---- Mark as read → note `status` via native host (added 2026-10-11, Marcus Webb) ----
+       Path: page (file://) → window.postMessage → extension content script bridge.js
+             → background.js → chrome.runtime.sendNativeMessage('com.pka.status_host')
+             → Scripts\pka_status_host.py rewrites ONLY the note's `status:` line + pka.db.
+       States (David-approved mockup 2026-10-11): working → success (+Undo 8s, then the row leaves) /
+       file locked (+Try again) / no status line (+Open in Obsidian) / helper not installed.
+       "Hide here only" keeps the old browser-only dismiss available in every failure state.
+       Restore (archived panel) and "Mark all as read" stay browser-only, as before. */
+    var BRIDGE_TIMEOUT_MS = 6000;
+    var bridgeSeq = 0, bridgePending = {};
+    window.addEventListener('message', function (ev) {
+      if (ev.source !== window || !ev.data || ev.data.pkaBridge !== 'res') return;
+      var cb = bridgePending[ev.data.id];
+      if (cb) { delete bridgePending[ev.data.id]; cb(ev.data.resp || { ok: false, error: 'no_host' }); }
+    });
+    function hasBridge() { return document.documentElement.getAttribute('data-pka-bridge') === '1'; }
+    function callHost(payload, cb) {
+      if (!hasBridge()) { cb({ ok: false, error: 'no_host', detail: 'bridge missing' }); return; }
+      var id = 'r' + (++bridgeSeq);
+      var timer = setTimeout(function () {
+        if (bridgePending[id]) { delete bridgePending[id]; cb({ ok: false, error: 'no_host', detail: 'timed out' }); }
+      }, BRIDGE_TIMEOUT_MS);
+      bridgePending[id] = function (resp) { clearTimeout(timer); cb(resp); };
+      window.postMessage({ pkaBridge: 'req', id: id, payload: payload }, '*');
+    }
+    function isNote(item) {
+      return item.fileType === 'markdown' && /\.md$/i.test(item.filename || '') &&
+        (item.source === 'Team Inbox' || item.source === 'Owners Inbox');
+    }
+    function notePath(item) { return item.source + '/' + item.filename; }
+    function obsidianUri(item) {
+      return 'obsidian://open?vault=PKA%20MANAGEMENT&file=' +
+        encodeURIComponent(item.source + '/' + item.filename.replace(/\.md$/i, ''));
+    }
+    function escHtml(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    function markNoteRead(item, row, btn, hideHere) {
+      var msgEl = row.querySelector('.il-status-msg');
+      function setState(cls, html, btnHtml, disabled) {
+        row.classList.remove('st-ok', 'st-locked', 'st-nostatus', 'st-nohost');
+        if (cls) row.classList.add(cls);
+        msgEl.innerHTML = html || '';
+        btn.innerHTML = btnHtml;
+        btn.disabled = !!disabled;
+      }
+      function wireMsgLinks() {
+        var hide = msgEl.querySelector('[data-act="hide"]');
+        if (hide) hide.addEventListener('click', function () { hideHere(); });
+      }
+      var openLink = ' <a href="' + obsidianUri(item) + '">Open in Obsidian</a>';
+      var hideLink = ' &middot; <button type="button" class="il-linkish" data-act="hide">Hide here only</button>';
+
+      setState('', '', '<span class="il-spin" aria-hidden="true"></span> Saving', true);
+      callHost({ action: 'set_status', path: notePath(item), status: 'reviewed' }, function (r) {
+        if (r && r.ok) {
+          var old = r.old || 'pending';
+          setState('st-ok', '&#10003; Marked <b>reviewed</b> in the note' + (r.db && r.db.indexOf('error') === 0 ? '' : ' (and pka.db)') +
+            '. <button type="button" class="il-linkish" data-act="undo">Undo</button>', '&#10003; Read', true);
+          var leaveTimer = setTimeout(hideHere, 8000);
+          var undo = msgEl.querySelector('[data-act="undo"]');
+          undo.addEventListener('click', function () {
+            clearTimeout(leaveTimer);
+            setState('', '', '<span class="il-spin" aria-hidden="true"></span> Undoing', true);
+            callHost({ action: 'set_status', path: notePath(item), status: old, expect: 'reviewed' }, function (u) {
+              if (u && u.ok) { setState('', '', '&#10003; Mark as read', false); }
+              else {
+                setState('st-locked', 'Undo failed: ' + escHtml((u && u.detail) || 'no reply') + '. The note still says <b>reviewed</b>.' + openLink,
+                  '&#8635; Try again', false);
+              }
+            });
+          });
+        } else if (r && r.error === 'locked') {
+          setState('st-locked', 'Note busy (syncing or open in another app). Tried 3 times. <b>Nothing changed.</b>' + hideLink,
+            '&#8635; Try again', false);
+          wireMsgLinks();
+        } else if (r && (r.error === 'no_status' || r.error === 'not_found' || r.error === 'conflict' || r.error === 'not_allowed')) {
+          var why = r.error === 'not_found' ? 'the note has moved (archived?)'
+            : r.error === 'no_status' ? 'the note has no single <code>status:</code> line'
+            : escHtml(r.detail || r.error);
+          setState('st-nostatus', 'Can&rsquo;t mark this one here: ' + why + '. Nothing changed.' + openLink + hideLink,
+            '&#10003; Mark as read', false);
+          wireMsgLinks();
+        } else {
+          var extra = r && r.extensionId ? ' (extension ID ' + escHtml(r.extensionId) + ')' : '';
+          setState('st-nohost', 'Helper not installed on this PC, so the note can&rsquo;t be updated from here' + extra + '.' + openLink + hideLink,
+            '&#10003; Mark as read', false);
+          wireMsgLinks();
+        }
+      });
     }
 
     function makeArchivedRow(item) {
@@ -3665,8 +5055,9 @@
             projectTagHtml(item) +
           '</div>' +
           filenameHtml(item) +
-          '<span class="il-context">' + item.context + '</span>' +
+          contextHtml(item) +
           '<span class="il-meta">' + metaText(item, 'Read &middot; ') + '</span>' +
+          (item.remittance ? '<div class="il-remittance-strip">' + remittanceStripHtml(item.remittance) + '</div>' : '') +
         '</div>' +
         '<button class="il-restore" type="button">&#8630; Restore</button>';
       row.querySelector('.il-restore').addEventListener('click', function () {
@@ -3674,11 +5065,39 @@
         saveDismissed(dismissedIds);
         render();
       });
+      return withRemittancePanel(item, row);
+    }
+
+    /* Team handoffs view: several Team Inbox screenshots collapse into one row (as mocked). */
+    function makeScreenshotGroupRow(items) {
+      var dates = items.map(function (i) { return i.dateReceived || ''; }).sort();
+      var row = document.createElement('div');
+      row.className = 'il-row';
+      row.innerHTML =
+        '<div class="il-info">' +
+          '<div class="il-badges">' +
+            '<span class="il-source-badge src-team">Team Inbox</span>' +
+            '<span class="il-ext-chip">png</span>' +
+          '</div>' +
+          '<span class="il-filename">' + items.length + ' screenshots</span>' +
+          '<span class="il-meta">Grouped &middot; ' + formatLogDate(dates[0]) + ' to ' + formatLogDate(dates[dates.length - 1]) + '</span>' +
+        '</div>' +
+        '<button class="il-mark-read" type="button">&#10003; Mark all read</button>';
+      row.querySelector('.il-mark-read').addEventListener('click', function () {
+        row.classList.add('il-leaving');
+        setTimeout(function () {
+          items.forEach(function (i) { dismissedIds[i.id] = true; });
+          saveDismissed(dismissedIds);
+          render();
+        }, 220);
+      });
       return row;
     }
 
     function matchesFilter(item) {
-      var sourceOk = currentSource === 'all' || item.source === currentSource;
+      var sourceOk = currentSource === 'all'
+        || (currentSource === 'yours' && isYours(item))
+        || (currentSource === 'team' && item.source === 'Team Inbox');
       var projectOk = !currentProject || item.projectTag === currentProject;
       return sourceOk && projectOk;
     }
@@ -3688,16 +5107,35 @@
       var archived = rawItems.filter(function (i) { return dismissedIds[i.id]; });
 
       var visibleActive = active.filter(matchesFilter);
+      /* Yours: oldest first so red flags lead. Team / All: newest first. */
+      visibleActive.sort(function (a, b) {
+        var x = a.dateReceived || '', y = b.dateReceived || '';
+        return currentSource === 'yours' ? (x < y ? -1 : x > y ? 1 : 0) : (x < y ? 1 : x > y ? -1 : 0);
+      });
 
       listEl.innerHTML = '';
-      visibleActive.forEach(function (item) { listEl.appendChild(makeActiveRow(item)); });
+      var shots = currentSource === 'yours' ? [] : visibleActive.filter(isScreenshot);
+      var groupShots = shots.length >= 2, groupDone = false;
+      visibleActive.forEach(function (item) {
+        if (groupShots && isScreenshot(item)) {
+          if (!groupDone) { listEl.appendChild(makeScreenshotGroupRow(shots)); groupDone = true; }
+          return;
+        }
+        listEl.appendChild(makeActiveRow(item));
+      });
 
       emptyEl.hidden = visibleActive.length !== 0;
 
+      var yoursCount = active.filter(isYours).length;
+      var teamCount = active.filter(function (i) { return i.source === 'Team Inbox'; }).length;
       if (countPillEl) {
-        countPillEl.textContent = active.length + (active.length === 1 ? ' new' : ' new');
-        countPillEl.style.display = active.length === 0 ? 'none' : '';
+        countPillEl.textContent = yoursCount + ' need you';
+        countPillEl.style.display = yoursCount === 0 ? 'none' : '';
       }
+      var nY = document.getElementById('il-n-yours'), nT = document.getElementById('il-n-team'), nA = document.getElementById('il-n-all');
+      if (nY) nY.textContent = yoursCount;
+      if (nT) nT.textContent = teamCount;
+      if (nA) nA.textContent = active.length;
 
       if (archiveCountEl) archiveCountEl.textContent = archived.length;
       if (archiveAreaEl) {
@@ -3761,22 +5199,10 @@
      OPTIONAL and omitted (never guessed) for builds with no
      durable live destination yet (e.g. still on hold, or a local
      dev environment with nothing to click through to). Checked
-     against Claude/Project Builds/ in the Obsidian vault
+     against Claude/Project Builds/ in the OB PKA team vault
      2026-08-01 for current status.
   ================================================ */
-  var PROJECT_BUILDS = [
-    { name: 'Book Production Hub', desc: 'Re-platformed Headpress Hub on Google Sheets + GitHub Pages, cross-device. Combines PO tracker, print estimates, Book Bible, Book Planner, ISBN pool. Supersedes Headpress Hub (2026-06-29 local-file build).', status: 'active',
-      link: 'https://netherleys.github.io/book-production-hub/' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'WriteApp',      desc: 'Distraction-free writing tool. v1 complete; iteration ongoing.',          status: 'active',
-      link: '../../WriteApp/writer.html' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'Web Portfolio', desc: 'David\u2019s personal author/portfolio site (davidkerekes.com). First-pass 5-page structure live locally, brand system in Elementor Global Colors/Fonts.', status: 'inbuild',
-      link: 'http://localhost:8080' /* obsidianLog stripped for public mirror -- internal file path + Windows username, also non-functional off this PC */ },
-    { name: 'PARA',         desc: 'Personal and business file organisation system. OneDrive, external HDDs, and local drives.', status: 'hold' }
-    /* PARA: on hold at David's own request since 2026-07-03 — skeleton
-       built, not chased further until he brings it up. No obsidianLog
-       (no corresponding file in Claude/Project Builds/) and no live
-       link — nothing to point to yet, omitted rather than guessed. */
-  ];
+  var PROJECT_BUILDS = [];  /* stripped for public mirror */
   /* PKA Dashboard itself deliberately isn't listed here — it IS this
      page, a self-referential "open the page you're already on" tile
      wouldn't add anything. Its own Obsidian log stays reachable the
@@ -3787,14 +5213,22 @@
     var BADGE_LABEL = { inbuild: 'In Build', active: 'Active', hold: 'On Hold', planned: 'Planned' };
     var list = document.getElementById('builds-list');
     if (!list) return;
-    list.innerHTML = PROJECT_BUILDS.map(function (p) {
+
+    /* David, 2026-08-16: builds badged "Active" are effectively completed
+       and should archive into their own collapsed sub-list nested under
+       the main Project Builds list, rather than sitting flush alongside
+       genuinely in-progress ('inbuild'/'planned'/'hold') builds. Driven
+       purely off status === 'active' — never hardcode which build names
+       land in the archive, so any future build marked 'active' falls in
+       here automatically with no special-casing. */
+    function buildRowHtml(p, archived) {
       var nameHtml = p.link
         ? '<a class="build-name build-name-link" href="' + p.link + '" target="_blank" rel="noopener noreferrer">' + p.name + ' &#8599;</a>'
         : '<span class="build-name">' + p.name + '</span>';
       var logHtml = p.obsidianLog
         ? '<a class="build-obsidian-link" href="' + p.obsidianLog + '" target="_blank" rel="noopener noreferrer">Obsidian log &#8599;</a>'
         : '';
-      return '<div class="build-row">'
+      return '<div class="build-row' + (archived ? ' build-row--archived' : '') + '">'
         + '<div class="build-info">'
         + nameHtml
         + '<span class="build-desc">' + p.desc + '</span>'
@@ -3802,7 +5236,31 @@
         + '</div>'
         + '<span class="build-badge build-badge--' + p.status + '">' + BADGE_LABEL[p.status] + '</span>'
         + '</div>';
-    }).join('');
+    }
+
+    var current  = PROJECT_BUILDS.filter(function (p) { return p.status !== 'active'; });
+    var archived = PROJECT_BUILDS.filter(function (p) { return p.status === 'active'; });
+
+    list.innerHTML = current.map(function (p) { return buildRowHtml(p, false); }).join('');
+
+    var archiveArea  = document.getElementById('builds-archive-area');
+    var archiveToggle = document.getElementById('builds-archive-toggle');
+    var archiveCount  = document.getElementById('builds-archive-count');
+
+    if (archiveArea) archiveArea.innerHTML = archived.map(function (p) { return buildRowHtml(p, true); }).join('');
+    if (archiveCount) archiveCount.textContent = archived.length;
+
+    var archiveChevron = document.getElementById('builds-archive-chevron');
+
+    if (archiveToggle && archiveArea) {
+      archiveToggle.addEventListener('click', function () {
+        var expanded = archiveToggle.getAttribute('aria-expanded') === 'true';
+        archiveToggle.setAttribute('aria-expanded', String(!expanded));
+        archiveArea.hidden = expanded;
+        archiveArea.setAttribute('aria-hidden', String(expanded));
+        if (archiveChevron) archiveChevron.innerHTML = expanded ? '&#9662;' : '&#9652;';
+      });
+    }
   }());
 
   /* ================================================
@@ -3810,140 +5268,7 @@
      Adding a new hire is one entry in TEAM_MEMBERS,
      not a hand-built <article> block.
   ================================================ */
-  var TEAM_MEMBERS = [
-    {
-      key: 'thomas', name: 'Thomas', role: 'Lead AI Orchestrator &amp; Team Director',
-      photo: 'Thomas.png', file: 'THOMAS.md',
-      persona: '&ldquo;Calm, decisive, strategic &mdash; he sees the big picture and always knows which team member is best suited for any given task.&rdquo;',
-      skills: [
-        'Strategic task routing &amp; team coordination',
-        'Single owner&ndash;team interface &amp; liaison',
-        'Hiring pipeline management',
-        'Team integrity &amp; role boundary oversight',
-        'Outcome reporting &amp; status communication'
-      ]
-    },
-    {
-      key: 'fred', name: 'Fred', role: 'Senior Researcher',
-      photo: 'Fred.jpg', file: 'FRED.md',
-      persona: '&ldquo;Methodical, intellectually curious, and thorough &mdash; when Fred hands you a report, you can trust it&rsquo;s complete.&rdquo;',
-      skills: [
-        'Real-world role research &amp; skills mapping',
-        'Structured Role Research Report delivery',
-        'Workforce &amp; domain intelligence',
-        'Hiring brief preparation for Miss Anderson',
-        'Knowledge synthesis &amp; documentation'
-      ]
-    },
-    {
-      key: 'anderson', name: 'Miss Anderson', role: 'Head of Human Resources',
-      photo: 'Miss Anderson.png', file: 'MISS_ANDERSON.md',
-      persona: '&ldquo;Warm but professional &mdash; she has an eye for talent and a gift for bringing out the best in people, even AI ones.&rdquo;',
-      skills: [
-        'New hire profile creation &amp; persona design',
-        'Team identity &amp; culture definition',
-        'AI portrait image prompt authoring',
-        'Team Roster maintenance',
-        'Hiring pipeline execution'
-      ]
-    },
-    {
-      key: 'mia', name: 'Mia Chen', role: 'Frontend Developer / UI Engineer',
-      photo: 'Mia Chen.jpg', file: 'MIA_CHEN.md',
-      persona: '&ldquo;She brings a quiet intensity to her work &mdash; methodical, precise, and genuinely passionate about the experience sitting between the user and the code.&rdquo;',
-      skills: [
-        'JavaScript (ES6+), HTML5 &amp; CSS3',
-        'Responsive &amp; adaptive design',
-        'Component-based architecture',
-        'API integration &amp; data rendering',
-        'Performance optimisation &amp; accessibility (WCAG)'
-      ]
-    },
-    {
-      key: 'jack', name: 'Jack Mercer', role: 'CSS Specialist / Frontend Layout Engineer',
-      photo: 'Jack Mercer.jpg', file: 'JACK.md',
-      persona: '&ldquo;He does not draw attention to himself &mdash; he draws attention to the work, and when it&rsquo;s done right, nobody notices it at all.&rdquo;',
-      skills: [
-        'Expert CSS Grid, Flexbox &amp; Custom Properties',
-        'Multi-theme architecture &mdash; dark/light mode systems',
-        'Fluid responsive typography with <code>clamp()</code>',
-        'Cross-browser rendering &amp; compatibility',
-        'CSS animation &amp; paint-performance optimisation'
-      ]
-    },
-    {
-      key: 'marcus', name: 'Marcus Webb', role: 'Systems &amp; Tools Administrator / AI Infrastructure',
-      photo: 'Marcus Webb.jpg', file: 'MARCUS_WEBB.md',
-      persona: '&ldquo;He fixed the problem before you knew there was one &mdash; methodical, unhurried, and precise in every diagnosis.&rdquo;',
-      skills: [
-        'Claude Code CLI configuration &amp; hooks',
-        'Anthropic API authentication &amp; credentials',
-        'PowerShell 7+ scripting &amp; automation',
-        'MCP server registration &amp; troubleshooting',
-        'Credential security &amp; environment management'
-      ]
-    },
-    {
-      key: 'cara', name: 'Cara Nolan', role: 'Document Administration Intern',
-      photo: 'Cara Nolan.jpg', file: 'CARA_NOLAN.md',
-      persona: '&ldquo;She reads a document to understand its structure, not its subject &mdash; and if the headings are wrong, she finds that genuinely troubling.&rdquo;',
-      skills: [
-        'Microsoft Word styles system mastery',
-        'Navigation Pane auditing &amp; correction',
-        'Table of Contents generation &amp; maintenance',
-        'Document template application &amp; conformance',
-        'PDF export &amp; disciplined file management'
-      ]
-    },
-    {
-      key: 'evelyn', name: 'Evelyn Cross', role: 'Executive Assistant / Chief of Staff',
-      photo: 'Evelyn Cross.jpg', file: 'EVELYN_CROSS.md',
-      persona: '&ldquo;She reads a messy pile of tasks and emails the way other people read a shopping list &mdash; sort, sequence, done.&rdquo;',
-      skills: [
-        'Todoist mastery &mdash; labels, filters &amp; recurring tasks',
-        'Inbox triage &amp; prioritisation frameworks',
-        'Time-blocking &amp; realistic day planning',
-        'GTD-style weekly review discipline',
-        'Cross-project workload &amp; capacity tracking'
-      ]
-    },
-    {
-      key: 'sadie', name: 'Sadie Marsh', role: 'UK Bookkeeper &amp; VAT/Xero Specialist',
-      photo: 'Sadie Marsh.jpg', file: 'SADIE_MARSH.md',
-      persona: '&ldquo;Nothing about a pile of unpublished Hubdoc receipts rattles her &mdash; she just starts at the top and works down.&rdquo;',
-      skills: [
-        'Xero &amp; Hubdoc bookkeeping administration',
-        'Bank feed reconciliation &amp; categorisation',
-        'UK VAT return preparation &amp; MTD filing',
-        'Publishing VAT quirks &mdash; zero-rating, royalties, exports',
-        'PO log reconciliation &amp; deadline flagging'
-      ]
-    },
-    {
-      key: 'eleanor', name: 'Eleanor Voss', role: 'US Tax Compliance Advisor',
-      photo: 'Eleanor Voss.jpg', file: 'ELEANOR_VOSS.md',
-      persona: '&ldquo;She does not perform expertise &mdash; she applies it. When Eleanor delivers guidance, you know exactly what to do next.&rdquo;',
-      skills: [
-        'US sales &amp; use tax compliance advisory',
-        'Nexus exposure assessment (physical &amp; economic)',
-        'Resale exemption certificate (ST-10) guidance',
-        'Virginia Department of Taxation expertise',
-        'Non-US publisher &amp; distributor compliance'
-      ]
-    },
-    {
-      key: 'priya', name: 'Priya Vance', role: 'Submissions &amp; Rights Strategist (Fiction &amp; Nonfiction)',
-      photo: 'Priya Vance.jpg', file: 'PRIYA_VANCE.md',
-      persona: '&ldquo;Warm toward the writer, cold toward the material &mdash; she can tell David a manuscript is genuinely good and not sellable as positioned, in the same breath, and both halves are true.&rdquo;',
-      skills: [
-        'Query letters, pitch decks &amp; dual-register synopsis writing',
-        'Nonfiction proposal architecture &amp; author-platform packaging',
-        'Comp-title research &amp; market/genre positioning (fiction &amp; nonfiction)',
-        'Submission-target research, list-building &amp; tracking',
-        'Rights literacy (advisory only) &mdash; never negotiates terms herself'
-      ]
-    }
-  ];
+  var TEAM_MEMBERS = [];  /* stripped for public mirror */
 
   (function () {
     var grid = document.getElementById('team-grid');
@@ -3986,7 +5311,8 @@
   /* ================================================
      TEAM PORTFOLIO — foldout, collapsed by default
      (same collapse/expand pattern as the Bookmarks
-     "Behind the scenes" toggle)
+     "Other Bookmarks" toggle, renamed from "Behind the
+     scenes" 2026-08-23)
   ================================================ */
   (function () {
     var toggle = document.getElementById('team-toggle');
@@ -4028,7 +5354,7 @@
       if (href) navById[href.slice(1)] = a;
     });
 
-    var sections = ['sec-bookmarks', 'sec-inbox-links', 'sec-builds', 'sec-portfolio']
+    var sections = ['sec-glance', 'sec-bookmarks', 'sec-inbox-links', 'sec-builds', 'sec-portfolio']
       .map(function (id) { return document.getElementById(id); })
       .filter(Boolean);
     if (!sections.length) return;
