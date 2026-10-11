@@ -2414,11 +2414,15 @@
     .il-filter-chip .n { opacity: 0.6; font-weight: 600; margin-left: 0.2rem; }
 
     @media (max-width: 1000px) {
-      .glance-grid { grid-template-columns: 1fr; }
+      .glance-grid { grid-template-columns: minmax(0, 1fr); }
     }
     @media (max-width: 600px) {
       .gl-counters { gap: 0.45rem; }
+      .gl-counter { padding: 0.5rem 0.55rem; min-width: 0; }
       .gl-counter-num { font-size: 1.5rem; }
+      .gl-counter-label { letter-spacing: 0.06em; overflow-wrap: anywhere; }
+      .gl-health-row { grid-template-columns: auto minmax(0, 1fr); }
+      .gl-health-detail { grid-column: 2; text-align: left; }
       .gl-health-detail { white-space: normal; }
     }
 
