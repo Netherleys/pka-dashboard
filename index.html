@@ -2396,6 +2396,18 @@
       border: 2px solid rgba(255, 255, 255, 0.28); border-radius: 999px;
     }
     .nav-health:hover { border-color: rgba(255, 255, 255, 0.6); }
+    /* "My one page" link (2026-10-16, Mia Chen) — David's one page, personal-vault
+       Ask Evelyn.md. Just a link: no mirror list, no counter. Own class (not
+       .dash-nav-item) so the scroll highlighter ignores it. Gold filled pill (the
+       Notes-dot gold) so it never looks like the white .active section pill. */
+    .nav-onepage {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.35rem;
+      background: #E0BB4A; color: var(--border-card); border: 2px solid #E0BB4A;
+      border-radius: 999px; padding: 0.4rem 0.95rem; white-space: nowrap;
+      font-family: var(--font-sans); font-size: 0.76rem; font-weight: 800;
+      letter-spacing: 0.03em; text-decoration: none;
+    }
+    .nav-onepage:hover { background: #fff; border-color: #fff; }
     .nav-health .gl-dot { width: 9px; height: 9px; }
 
     /* Inbox Links age flags (#1, same mockup) — amber 3+ days, red 7+ */
@@ -2576,6 +2588,8 @@
        Every section below stays permanently in the DOM.
   ============================================== -->
   <nav class="dash-nav" id="dash-nav" aria-label="Dashboard sections">
+    <!-- My one page (2026-10-16, Mia Chen): opens Ask Evelyn.md in Obsidian (personal vault). -->
+    <a class="nav-onepage" id="nav-onepage" href="obsidian://open?vault=OBSIDIAN%20PC&amp;file=Ask%20Evelyn" title="Open your one page (Ask Evelyn) in Obsidian">&#128203; My one page</a>
     <a class="dash-nav-item" href="#sec-bookmarks">Bookmarks</a>
     <!-- Quick Notes (round 2, 2026-08-01) — relocated from an
          always-visible widget (dropped round 1) to a compact nav-bar
@@ -2629,21 +2643,7 @@
     </section>
 
     <!-- ========================================
-         NEXT 14 DAYS (#2), added 2026-10-11 (Mia Chen), David-approved,
-         same mockup. Filled by JS from glance-data.js.
-    ========================================= -->
-    <section class="deadlines-section" id="sec-deadlines" aria-label="Next 14 days">
-      <div class="section-header">
-        <span class="section-label">Next 14 Days</span>
-        <div class="section-rule"></div>
-      </div>
-      <div class="dl-stale-note" id="dl-stale-note" hidden></div>
-      <div class="dl-strip" id="dl-strip"></div>
-      <div class="dl-later" id="dl-later" hidden></div>
-    </section>
-
-    <!-- ========================================
-         RUN (2026-10-12, Mia Chen), David-approved from
+         RUN (2026-10-12, Mia Chen; moved under At a Glance 2026-10-24, Marcus Webb, David silent yes), David-approved from
          _mockups/run-panel-mockup-2026-10-11.html. Each button opens
          pka-run://<job> (Marcus Webb's allow-listed launcher). Pills filled
          by JS from glance-data.js. dk.com tile: remove once dk.com is done.
@@ -2684,11 +2684,32 @@
             <span class="run-hint">Weekly sheet: Timebox plus Todoist. Print Mondays.</span>
           </button>
 
+          <!-- 2026-10-15, Marcus Webb: Gazette digest (David approved v2 15-10) -->
+          <button class="run-btn" type="button" data-job="gazette-digest" data-label="Gazette digest">
+            <span class="run-btn-label"><span class="run-play" aria-hidden="true">&#9654;</span>Gazette: new since last issue</span>
+            <span class="run-hint">Prompts and pointers for the next Gazette. Opens a dated note in OB PKA.</span>
+          </button>
+
         </div>
         <div class="run-foot">Each button runs one fixed job in a console window. Nothing else can be run from here.</div>
       </div>
     </section>
 
+
+
+    <!-- ========================================
+         NEXT 14 DAYS (#2), added 2026-10-11 (Mia Chen), David-approved,
+         same mockup. Filled by JS from glance-data.js.
+    ========================================= -->
+    <section class="deadlines-section" id="sec-deadlines" aria-label="Next 14 days">
+      <div class="section-header">
+        <span class="section-label">Next 14 Days</span>
+        <div class="section-rule"></div>
+      </div>
+      <div class="dl-stale-note" id="dl-stale-note" hidden></div>
+      <div class="dl-strip" id="dl-strip"></div>
+      <div class="dl-later" id="dl-later" hidden></div>
+    </section>
 
     <!-- ========================================
          BOOKMARKS — full width now that My Navigation (dropped round 2,
@@ -5579,10 +5600,15 @@
     var n = null;
     for (var i = 0; i < cands.length && n === null; i++) n = num(cands[i]);
     var cd = document.getElementById('run-commonplace-due'), cb = document.getElementById('run-commonplace');
+    /* "needs manual" = scans Run left in the Inbox (handwriting / no highlighter), 2026-10-25 */
+    var nm = num(C.commonplaceManual); if (nm === null) nm = num(G.commonplaceManual);
     if (cd && cb && n !== null) {
       cd.hidden = false;
       cd.className = 'run-due ' + (n ? 'warn' : 'quiet');
-      cd.textContent = n ? n + (n === 1 ? ' scan waiting' : ' scans waiting') : 'Inbox empty';
+      var txt = n ? n + (n === 1 ? ' scan waiting' : ' scans waiting') : (nm ? '' : 'Inbox empty');
+      if (nm) txt += (txt ? ' · ' : '') + nm + ' need' + (nm === 1 ? 's' : '') + ' manual';
+      cd.textContent = txt;
+      cd.title = nm ? 'Run left these in the Commonplace Inbox: it can only read yellow highlighter on printed text' : '';
       cb.classList.toggle('is-warn', n > 0);
     }
   }());
